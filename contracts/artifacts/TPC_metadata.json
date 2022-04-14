@@ -1,0 +1,66 @@
+{
+	"compiler": {
+		"version": "0.8.7+commit.e28d00a7"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "uint256[]",
+						"name": "participants",
+						"type": "uint256[]"
+					},
+					{
+						"internalType": "uint256",
+						"name": "timeout",
+						"type": "uint256"
+					}
+				],
+				"name": "request",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"details": "Store & retrieve value in a variable",
+			"kind": "dev",
+			"methods": {},
+			"title": "Storage",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/TPC.sol": "TPC"
+		},
+		"evmVersion": "london",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/TPC.sol": {
+			"keccak256": "0x05acb7f181ddc3c2fff2eeef2523b95edae9a72e25be3e530953d9c3c5d3d5cd",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://a5b114c0bf1c61a60e1537cbd7a6e83b37788f263e17867599bbee19105fb689",
+				"dweb:/ipfs/QmdMa2KbmZ7xeFcDCTo9PrfzRH3jvVEtjxXSFreQESXKGJ"
+			]
+		}
+	},
+	"version": 1
+}
