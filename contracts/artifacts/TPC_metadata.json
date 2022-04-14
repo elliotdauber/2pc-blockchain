@@ -16,9 +16,9 @@
 				"name": "_participants",
 				"outputs": [
 					{
-						"internalType": "uint256",
+						"internalType": "address",
 						"name": "",
-						"type": "uint256"
+						"type": "address"
 					}
 				],
 				"stateMutability": "view",
@@ -61,9 +61,9 @@
 				"name": "_voted",
 				"outputs": [
 					{
-						"internalType": "uint256",
+						"internalType": "address",
 						"name": "",
-						"type": "uint256"
+						"type": "address"
 					}
 				],
 				"stateMutability": "view",
@@ -72,9 +72,9 @@
 			{
 				"inputs": [
 					{
-						"internalType": "uint256[]",
+						"internalType": "address[]",
 						"name": "participants",
-						"type": "uint256[]"
+						"type": "address[]"
 					},
 					{
 						"internalType": "uint256",
@@ -83,6 +83,26 @@
 					}
 				],
 				"name": "request",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "verdict",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "int256",
+						"name": "vote",
+						"type": "int256"
+					}
+				],
+				"name": "voter",
 				"outputs": [],
 				"stateMutability": "nonpayable",
 				"type": "function"
@@ -118,11 +138,11 @@
 	},
 	"sources": {
 		"contracts/TPC.sol": {
-			"keccak256": "0x93c1e814dcb4ea07c4ab7cf2a073bbabe340c5f8dbcd7c36dc5d907ef88bc997",
+			"keccak256": "0x7c0a2c03857a34ae35e662f72764c376790fb894f49eaa5383c21bf7931c67b3",
 			"license": "GPL-3.0",
 			"urls": [
-				"bzz-raw://3fa7703a85ef78465031c87065710006051ff7dd593de6dfdd17e1268cba169d",
-				"dweb:/ipfs/QmUhJzR4kbHE7iXHwx51htBLbg6q462TBvwDywkgqDBtKq"
+				"bzz-raw://ae3437bb20400053e8cbc3c808cb0717681e88c7607291c6e60f06a62a032478",
+				"dweb:/ipfs/QmS65xirVNXrp8cvLaxvZbsbhWDjQjtQqzquFxhVr3bLCg"
 			]
 		}
 	},
