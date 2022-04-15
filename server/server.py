@@ -11,7 +11,8 @@ def dynamotest():
 
 def server():
     w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
-    print('connected', w3.isConnected())
+    if not w3.isConnected():
+        return
     eth.default_account = default_account
 
     contract_instance = w3.eth.contract(address=address, abi=abi)
