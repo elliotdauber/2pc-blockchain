@@ -1,5 +1,13 @@
 from web3 import Web3, EthereumTesterProvider, eth
 from serverconfig import *
+from dynamo import table1, table2
+
+# find better way to organize/import tables
+
+def dynamotest():
+    print("tables:")
+    print(table1.creation_date_time)
+    print(table2.creation_date_time)
 
 def server():
     w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
@@ -17,4 +25,5 @@ def server():
     state = contract_instance.functions.getState().call()
     print(state)
 
+dynamotest()
 server()

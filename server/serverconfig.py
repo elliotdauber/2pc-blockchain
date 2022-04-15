@@ -117,3 +117,7 @@ abi = [
 		"type": "function"
 	}
 ]
+
+
+aws_key = 'AKIA2YYXJAT3RBWWCPEV'
+aws_secret = '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'

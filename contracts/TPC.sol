@@ -34,4 +34,12 @@ contract TPC {
     function verdict() public {
         //TODO
     }
+
+    function getState() public view returns (string memory) {
+        if (_state == State.INIT) {return "INIT";}
+        if (_state == State.VOTING) {return "VOTING";}
+        if (_state == State.COMMIT) {return "COMMIT";}
+        if (_state == State.ABORT) {return "ABORT";}
+        return "NONE";
+    }
 }

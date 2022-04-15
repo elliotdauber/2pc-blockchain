@@ -70,6 +70,19 @@
 				"type": "function"
 			},
 			{
+				"inputs": [],
+				"name": "getState",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
 				"inputs": [
 					{
 						"internalType": "address[]",
@@ -138,11 +151,11 @@
 	},
 	"sources": {
 		"contracts/TPC.sol": {
-			"keccak256": "0x7c0a2c03857a34ae35e662f72764c376790fb894f49eaa5383c21bf7931c67b3",
+			"keccak256": "0x18e3bda0cb3a97c879de67772aa94af1eb944bbc380e25eb69075a3c91a8d954",
 			"license": "GPL-3.0",
 			"urls": [
-				"bzz-raw://ae3437bb20400053e8cbc3c808cb0717681e88c7607291c6e60f06a62a032478",
-				"dweb:/ipfs/QmS65xirVNXrp8cvLaxvZbsbhWDjQjtQqzquFxhVr3bLCg"
+				"bzz-raw://057d285c58a473338f129f4acb8b23c9b4d64fe90bf1e860261002b403259f52",
+				"dweb:/ipfs/Qmb2EX5nwicvCSgb8fMFnE3PtPCYhF678G7oagU3odH1Qo"
 			]
 		}
 	},
