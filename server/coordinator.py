@@ -10,6 +10,10 @@ class Coordinator:
         print("deploying contract index " + str(self.contract.num_deployments))
         self.contract.deploy()
 
+    def request(self):
+        #TODO implement request function
+        pass
+
     def print_num_deployments(self):
         print(self.contract.num_deployments())
 
@@ -20,6 +24,7 @@ def coordinator():
     assert(w3.isConnected())
     C = Coordinator(source, w3.w3)
     C.run()
+    return C
 
 
 coordinator()
