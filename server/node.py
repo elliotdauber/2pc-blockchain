@@ -9,10 +9,11 @@ def dynamotest():
     print(table2.creation_date_time)
 
 class Node:
-    def __init__(self, w3, table):
+    def __init__(self, w3, table, nodeid):
         self.table = table
         self.w3 = w3
         self.contract = None #TOOD: get contract from coordinator? how does this work?
+        self.id = nodeid
 
     def run(self):
         # TODO: all of the actual server stuff
@@ -54,7 +55,7 @@ def node(index):
     print("starting up a node...")
     w3 = W3HTTPConnection()
     assert(w3.isConnected())
-    N = Node(w3.w3, tables[index])
+    N = Node(w3.w3, tables[index], index)
     N.run()
     return N
 
