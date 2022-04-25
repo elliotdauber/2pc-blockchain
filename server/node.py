@@ -19,6 +19,18 @@ class Node:
         # TODO: all of the actual server stuff
         print("node running!")
         print(self.table.creation_date_time)
+        self.accept_msgs()
+        if self.can_transact():
+            self.voter(True)
+        else:
+            self.voter(False)
+        # Upon recieving work, determine if it is doable and
+        # pass the nodes vote on to the contract (node.voter(vote))
+        # await a verdict
+
+    def can_transact(self):
+        # TODO: determine whether or not this work can be done locally
+        return True
 
     # not currently used
     # https://stackoverflow.com/questions/6920858/interprocess-communication-in-python
