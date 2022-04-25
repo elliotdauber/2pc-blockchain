@@ -16,6 +16,9 @@ class Coordinator:
         self.contract.functions.request(self.num_nodes, timeout).transact()
         pass
 
+    def send_msg(self, msg, node):
+        pass
+
     def print_num_deployments(self):
         print(self.contract.num_deployments())
 
