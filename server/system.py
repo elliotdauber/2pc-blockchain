@@ -4,12 +4,13 @@ import sys
 
 class System:
     def __init__(self, num_nodes):
+        self.num_nodes = num_nodes
         self.startCoordinator()
         for i in range(num_nodes):
             self.startNode(i)
 
     def startCoordinator(self):
-        coordinator()
+        coordinator(self.num_nodes)
 
     def startNode(self, index):
         node(index)
