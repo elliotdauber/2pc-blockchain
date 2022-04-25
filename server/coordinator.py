@@ -21,7 +21,7 @@ class Coordinator:
 
 def coordinator(numNodes):
     print("starting up the coordinator...")
-    source = "../contracts/TPC.sol"
+    source = "contracts/TPC.sol"
     w3 = W3HTTPConnection()
     assert(w3.isConnected())
     C = Coordinator(source, w3.w3, numNodes)
