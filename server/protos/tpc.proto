@@ -15,16 +15,22 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "io.grpc.examples.helloworld";
-option java_outer_classname = "HelloWorldProto";
-option objc_class_prefix = "HLW";
+option java_package = "io.grpc.examples.tpc";
+option java_outer_classname = "TPCProto";
+option objc_class_prefix = "TPC";
 
-package helloworld;
+package tpc;
 
-// The greeting service definition.
+// The coordinator service definition.
 service Coordinator {
-  // Sends a greeting
+  // Receives work in the coordinator and sends it to the nodes
   rpc SendWork (WorkRequest) returns (WorkResponse) {}
+}
+
+//The node service definition
+service Node {
+  // Receives work in the node
+  rpc ReceiveWork (WorkRequest) returns (WorkResponse) {}
 }
 
 // The request message containing the user's name.

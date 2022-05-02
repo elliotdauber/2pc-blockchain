@@ -1,7 +1,7 @@
 from w3connection import W3HTTPConnection
 from contract import Contract
 import grpc
-import _grpc.helloworld_pb2_grpc
+import _grpc.tpc_pb2_grpc
 from concurrent import futures
 
 class Coordinator():
@@ -15,7 +15,7 @@ class Coordinator():
         # Initialize the server
         print("STARTING SERVER")
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        _grpc.helloworld_pb2_grpc.add_CoordinatorServicer_to_server(
+        _grpc.tpc_pb2_grpc.add_CoordinatorServicer_to_server(
             CoordinatorGRPC(), server)
         server.add_insecure_port("localhost:8888\0")
         server.start()
@@ -36,12 +36,18 @@ class Coordinator():
     def print_num_deployments(self):
         print(self.contract.num_deployments())
 
-class CoordinatorGRPC(_grpc.helloworld_pb2_grpc.CoordinatorServicer):
+class CoordinatorGRPC(_grpc.tpc_pb2_grpc.CoordinatorServicer):
 
     def SendWork(self, request, context):
-        # TODO: Send Work to Noodes
         print(request.work, request.address)
-        response = _grpc.helloworld_pb2.WorkResponse(success="this was a success!")
+
+        with grpc.insecure_channel("localhost:8889") as channel:
+            stub = _grpc.tpc_pb2_grpc.NodeStub(channel)
+            node_request = _grpc.tpc_pb2.WorkRequest(work=request.work, address=request.address)
+            retval = stub.ReceiveWork(node_request)
+            print(retval.success)
+
+        response = _grpc.tpc_pb2.WorkResponse(success="this was a success!")
         return response
 
 def coordinator(numNodes):

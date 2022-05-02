@@ -1,6 +1,6 @@
 import grpc
-import _grpc.helloworld_pb2_grpc
-import _grpc.helloworld_pb2
+import _grpc.tpc_pb2_grpc
+import _grpc.tpc_pb2
 
 class Client:
     def __init__(self):
@@ -8,8 +8,8 @@ class Client:
 
     def makeRequest(self):
         with grpc.insecure_channel("localhost:8888") as channel:
-            stub = _grpc.helloworld_pb2_grpc.CoordinatorStub(channel)
-            request = _grpc.helloworld_pb2.WorkRequest(work="the message!", address="the addy!")
+            stub = _grpc.tpc_pb2_grpc.CoordinatorStub(channel)
+            request = _grpc.tpc_pb2.WorkRequest(work="the message!", address="the addy!")
             retval = stub.SendWork(request)
             print(retval.success)
 
