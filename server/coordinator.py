@@ -10,14 +10,15 @@ class Coordinator():
         self.contract = Contract(contract_file, w3)
         self.w3 = w3 #TODO: rethink this abstraction
         self.nodes = SYSCONFIG.nodes
+        self.config = SYSCONFIG.coord
         
     def serve(self):
         # Initialize the server
-        print("STARTING SERVER")
+        print("STARTING COORDINATOR")
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         _grpc.tpc_pb2_grpc.add_CoordinatorServicer_to_server(
             CoordinatorGRPC(), server)
-        server.add_insecure_port("localhost:8888\0")
+        server.add_insecure_port(self.config.url)
         server.start()
         server.wait_for_termination()
 

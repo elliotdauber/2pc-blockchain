@@ -1,6 +1,11 @@
 from dynamo import tables
 
 
+class CoordinatorConfig:
+    def __init__(self, url):
+        self.url = url
+
+
 class NodeConfig:
     def __init__(self, id, url, table, pk_range):
         self.id = id
@@ -10,8 +15,9 @@ class NodeConfig:
 
 
 class SystemConfig:
-    def __init__(self, nodes):
+    def __init__(self, nodes, coord):
         self.nodes = nodes
+        self.coord = coord
 
 
 _NODES = [
@@ -19,4 +25,6 @@ _NODES = [
     NodeConfig(id=1, url="localhost:8887", table=tables[1], pk_range=["o", "z"])
 ]
 
-SYSCONFIG = SystemConfig(_NODES)
+_COORD = CoordinatorConfig("localhost:8888")
+
+SYSCONFIG = SystemConfig(_NODES, _COORD)
