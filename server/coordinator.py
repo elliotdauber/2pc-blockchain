@@ -3,13 +3,13 @@ from contract import Contract
 import grpc
 import _grpc.tpc_pb2_grpc
 from concurrent import futures
+from systemconfig import SYSCONFIG
 
 class Coordinator():
     def __init__(self, contract_file, w3, num_nodes):
         self.contract = Contract(contract_file, w3)
         self.w3 = w3 #TODO: rethink this abstraction
-        self.num_nodes = num_nodes
-        self.serve()
+        self.num_nodes = len(SYSCONFIG.nodes)
         
     def serve(self):
         # Initialize the server
@@ -20,10 +20,6 @@ class Coordinator():
         server.add_insecure_port("localhost:8888\0")
         server.start()
         server.wait_for_termination()
-
-    def run(self):
-        print("deploying contract index " + str(self.contract.num_deployments))
-        self.contract.deploy()
 
     def request(self):
         timeout = 10
@@ -36,28 +32,51 @@ class Coordinator():
     def print_num_deployments(self):
         print(self.contract.num_deployments())
 
+    def deploy(self):
+        print("deploying contract index " + str(self.contract.num_deployments))
+        contract = self.contract.deploy()
+        return contract.address
+
+
+#TODO: pk empty string should be an error
+#TODO: abstract out the logic that determines if a node should accept certain data (for tx in work section)
 class CoordinatorGRPC(_grpc.tpc_pb2_grpc.CoordinatorServicer):
-
     def SendWork(self, request, context):
-        print(request.work[0])
+        work = request.work
+        if len(work) == 0:
+            return _grpc.tpc_pb2.WorkResponse(success="no work given, operation aborted")
 
-        # with grpc.insecure_channel("localhost:8889") as channel:
-        #     stub = _grpc.tpc_pb2_grpc.NodeStub(channel)
-        #     node_request = _grpc.tpc_pb2.WorkRequest(work=request.work, address=request.address)
-        #     retval = stub.ReceiveWork(node_request)
-        #     print(retval.success)
+        address = C.deploy()
+        for node in SYSCONFIG.nodes:
+            with grpc.insecure_channel(node.url) as channel:
+                stub = _grpc.tpc_pb2_grpc.NodeStub(channel)
+                node_request = _grpc.tpc_pb2.WorkRequest(address=address)
 
-        response = _grpc.tpc_pb2.WorkResponse(success="this was a success!")
-        return response
+                for tx in work:
+                    pk = tx.pk
+                    if pk == "":
+                        continue
+                    first = pk[0].to_lower()
+                    if node.pk_range[0] <= first <= node.pk_range[1]:
+                        node_request.work.append(tx)
 
-def coordinator(numNodes):
+                retval = stub.ReceiveWork(node_request)
+                print(retval)
+
+        return _grpc.tpc_pb2.WorkResponse(success="this was a success!")
+
+
+C = None
+
+def coordinator():
+    global C
     print("starting up the coordinator...")
     source = "contracts/TPC.sol"
     w3 = W3HTTPConnection()
     assert(w3.isConnected())
-    C = Coordinator(source, w3.w3, numNodes)
-    C.run()
+    C = Coordinator(source, w3.w3)
+    C.serve()
     return C
 
 
-coordinator(2)
+coordinator()
