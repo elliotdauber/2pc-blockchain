@@ -1,3 +1,5 @@
+from dynamo import tables
+
 class SystemConfig:
     def __init__(self, nodes):
         self.nodes = nodes
@@ -5,11 +7,13 @@ class SystemConfig:
 _NODES = [
     {
         "url": "localhost:8889",
-        "pk_range": ["a", "n"]
+        "pk_range": ["a", "n"],
+        "table": tables[0]
     },
     {
         "url": "localhost:8887",
-        "pk_range": ["o", "z"]
+        "pk_range": ["o", "z"],
+        "table": tables[1]
     }
 ]
 

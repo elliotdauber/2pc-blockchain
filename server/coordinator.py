@@ -6,7 +6,7 @@ from concurrent import futures
 from systemconfig import SYSCONFIG
 
 class Coordinator():
-    def __init__(self, contract_file, w3, num_nodes):
+    def __init__(self, contract_file, w3):
         self.contract = Contract(contract_file, w3)
         self.w3 = w3 #TODO: rethink this abstraction
         self.num_nodes = len(SYSCONFIG.nodes)
@@ -48,7 +48,7 @@ class CoordinatorGRPC(_grpc.tpc_pb2_grpc.CoordinatorServicer):
 
         address = C.deploy()
         for node in SYSCONFIG.nodes:
-            with grpc.insecure_channel(node.url) as channel:
+            with grpc.insecure_channel(node["url"]) as channel:
                 stub = _grpc.tpc_pb2_grpc.NodeStub(channel)
                 node_request = _grpc.tpc_pb2.WorkRequest(address=address)
 
@@ -56,14 +56,16 @@ class CoordinatorGRPC(_grpc.tpc_pb2_grpc.CoordinatorServicer):
                     pk = tx.pk
                     if pk == "":
                         continue
-                    first = pk[0].to_lower()
-                    if node.pk_range[0] <= first <= node.pk_range[1]:
+                    first = pk[0].lower()
+                    if node["pk_range"][0] <= first <= node["pk_range"][1]:
                         node_request.work.append(tx)
 
-                retval = stub.ReceiveWork(node_request)
-                print(retval)
+                if len(node_request.work) > 0:
+                    retval = stub.ReceiveWork(node_request)
+                    print(retval)
 
-        return _grpc.tpc_pb2.WorkResponse(success="this was a success!")
+        response = _grpc.tpc_pb2.WorkResponse(success="this was a success!")
+        return response
 
 
 C = None

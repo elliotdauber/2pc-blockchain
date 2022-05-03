@@ -4,6 +4,7 @@ from w3connection import W3HTTPConnection
 import grpc
 import _grpc.tpc_pb2_grpc
 from concurrent import futures
+from systemconfig import SYSCONFIG
 
 def dynamotest():
     print("tables:")
@@ -11,8 +12,8 @@ def dynamotest():
     print(table2.creation_date_time)
 
 class Node:
-    def __init__(self, w3, table, nodeid):
-        self.table = table
+    def __init__(self, w3, nodeid):
+        self.table = SYSCONFIG.nodes[nodeid]["table"]
         self.w3 = w3
         self.contract = None #TOOD: get contract from coordinator? how does this work?
         self.id = nodeid
@@ -24,29 +25,15 @@ class Node:
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         _grpc.tpc_pb2_grpc.add_NodeServicer_to_server(
             NodeGRPC(), server)
-        server.add_insecure_port("localhost:8889\0")
+        server.add_insecure_port(SYSCONFIG.nodes[self.id]["url"])
         server.start()
         server.wait_for_termination()
 
-    def run(self):
-        # TODO: all of the actual server stuff
-        print("node running!")
-        print(self.table.creation_date_time)
-        self.accept_msgs()
-        if self.can_transact():
-            self.voter(True)
-        else:
-            self.voter(False)
-        # Upon recieving work, determine if it is doable and
-        # pass the nodes vote on to the contract (node.voter(vote))
-        # await a verdict
-
-    def can_transact(self, ):
-        return  
-        return True
+    def can_transact(self, work):
+        return all([action.pk not in self.working_pk for action in work])
 
     def voter(self, vote):
-        state = self.contract.functions.voter(1).transact()
+        state = "COMMIT"  # self.contract.functions.voter(1).transact()
         if state == "COMMIT":
             pass
             #TODO
@@ -61,33 +48,36 @@ class Node:
             #TODO
 
 class NodeGRPC(_grpc.tpc_pb2_grpc.NodeServicer):
-
-    def can_transact(self, work):
-        return all([action.pk not in self.working_pk for action in work])
-        
-
     def ReceiveWork(self, request, context):
-        print(request.work, request.address)
+        work = request.work
+        print("printing work for node: ")
+        print(request.address)
+        for tx in work:
+            print(tx)
+        print("done printing work for node")
         response = _grpc.tpc_pb2.WorkResponse(success="from node, this was a success!")
-        if self.can_transact(request.work):
-            self.voter(True)
+        if N.can_transact(request.work):
+            N.voter(True)
         else:
-            self.voter(False)
+            N.voter(False)
         return response
 
 
+N = None
+
 def node(index):
+    global N
     print("starting up a node...")
     w3 = W3HTTPConnection()
     assert(w3.isConnected())
-    N = Node(w3.w3, tables[index], index)
+    N = Node(w3.w3, index)
     N.serve()
     return N
 
 
 def main():
     index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-    assert(0 <= index < len(tables))
+    assert(0 <= index < len(SYSCONFIG.nodes))
     node(index)
 
 
