@@ -40,6 +40,43 @@ class Node:
             pass
             #TODO
 
+    #logic: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html
+    def transact(self, tx):
+        table = self.config.table
+        action = tx.action[0] if tx.action != "" else ""
+        if tx.access == "read":
+            response = table.get_item(
+                Key = {
+                    "pk": tx.pk
+                }
+            )
+            if tx.column == "":
+                return response['Item']
+            return response['Item'][tx.column] if tx.column in response['Item'] else None
+        elif tx.access == "write":
+            if action == "&":
+                response = table.put_item(
+                    Key={
+                        "pk": tx.pk,
+                        "balance": 0
+                    }
+                )
+            elif action == "~":
+                response = table.delete_item(
+                    Key={
+                        "pk": tx.pk
+                    }
+                )
+            elif action == '+':
+                # TODO: add operation (make sure column is int first)
+                pass
+            elif action == '-':
+                # TODO: subtract operation (make sure column is int first)
+                pass
+
+
+
+
 class NodeGRPC(_grpc.tpc_pb2_grpc.NodeServicer):
     def ReceiveWork(self, request, context):
         work = request.work
@@ -47,6 +84,7 @@ class NodeGRPC(_grpc.tpc_pb2_grpc.NodeServicer):
         print(request.address)
         for tx in work:
             print(tx)
+            #N.transact(tx) #TODO REMOVE THIS
         print("done printing work for node")
         response = _grpc.tpc_pb2.WorkResponse(success="from node, this was a success!")
         if N.can_transact(request.work):
