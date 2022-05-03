@@ -9,7 +9,7 @@ class Coordinator():
     def __init__(self, contract_file, w3):
         self.contract = Contract(contract_file, w3)
         self.w3 = w3 #TODO: rethink this abstraction
-        self.num_nodes = len(SYSCONFIG.nodes)
+        self.nodes = SYSCONFIG.nodes
         
     def serve(self):
         # Initialize the server
@@ -23,7 +23,7 @@ class Coordinator():
 
     def request(self):
         timeout = 10
-        self.contract.functions.request(self.num_nodes, timeout).transact()
+        self.contract.functions.request(len(self.nodes), timeout).transact()
         pass
 
     def send_msg(self, msg, node):
@@ -48,7 +48,7 @@ class CoordinatorGRPC(_grpc.tpc_pb2_grpc.CoordinatorServicer):
 
         address = C.deploy()
         for node in SYSCONFIG.nodes:
-            with grpc.insecure_channel(node["url"]) as channel:
+            with grpc.insecure_channel(node.url) as channel:
                 stub = _grpc.tpc_pb2_grpc.NodeStub(channel)
                 node_request = _grpc.tpc_pb2.WorkRequest(address=address)
 
@@ -57,7 +57,7 @@ class CoordinatorGRPC(_grpc.tpc_pb2_grpc.CoordinatorServicer):
                     if pk == "":
                         continue
                     first = pk[0].lower()
-                    if node["pk_range"][0] <= first <= node["pk_range"][1]:
+                    if node.pk_range[0] <= first <= node.pk_range[1]:
                         node_request.work.append(tx)
 
                 if len(node_request.work) > 0:
