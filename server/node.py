@@ -16,6 +16,7 @@ class Node:
         self.w3 = w3
         self.contract = None #TOOD: get contract from coordinator? how does this work?
         self.id = nodeid
+        self.working_pk = set()
 
     def serve(self):
         # Initialize the server
@@ -40,8 +41,8 @@ class Node:
         # pass the nodes vote on to the contract (node.voter(vote))
         # await a verdict
 
-    def can_transact(self):
-        # TODO: determine whether or not this work can be done locally
+    def can_transact(self, ):
+        return  
         return True
 
     def voter(self, vote):
@@ -61,9 +62,17 @@ class Node:
 
 class NodeGRPC(_grpc.tpc_pb2_grpc.NodeServicer):
 
+    def can_transact(self, work):
+        return all([action.pk not in self.working_pk for action in work])
+        
+
     def ReceiveWork(self, request, context):
         print(request.work, request.address)
         response = _grpc.tpc_pb2.WorkResponse(success="from node, this was a success!")
+        if self.can_transact(request.work):
+            self.voter(True)
+        else:
+            self.voter(False)
         return response
 
 
