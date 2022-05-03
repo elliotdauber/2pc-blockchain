@@ -4,7 +4,6 @@ from w3connection import W3HTTPConnection
 import grpc
 import _grpc.tpc_pb2_grpc
 from concurrent import futures
-from multiprocessing.connection import Listener
 
 def dynamotest():
     print("tables:")
@@ -44,21 +43,6 @@ class Node:
     def can_transact(self):
         # TODO: determine whether or not this work can be done locally
         return True
-
-    # not currently used
-    # https://stackoverflow.com/questions/6920858/interprocess-communication-in-python
-    def accept_msgs(self):
-        address = ('localhost', 6000)  # family is deduced to be 'AF_INET'
-        listener = Listener(address, authkey=b'secret password')
-        conn = listener.accept()
-        print('connection accepted from', listener.last_accepted)
-        while True:
-            msg = conn.recv()
-            # do something with msg
-            if msg == 'close':
-                conn.close()
-                break
-        listener.close()
 
     def voter(self, vote):
         state = self.contract.functions.voter(1).transact()

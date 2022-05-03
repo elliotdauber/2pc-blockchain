@@ -33,9 +33,16 @@ service Node {
   rpc ReceiveWork (WorkRequest) returns (WorkResponse) {}
 }
 
+message Transaction {
+    string access = 1;
+    string pk = 2;
+    string column = 3;
+    string action = 4;
+}
+
 // The request message containing the user's name.
 message WorkRequest {
-  string work = 1;
+  repeated Transaction work = 1;
   string address = 2;
 }
 

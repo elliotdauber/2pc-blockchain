@@ -39,13 +39,13 @@ class Coordinator():
 class CoordinatorGRPC(_grpc.tpc_pb2_grpc.CoordinatorServicer):
 
     def SendWork(self, request, context):
-        print(request.work, request.address)
+        print(request.work[0])
 
-        with grpc.insecure_channel("localhost:8889") as channel:
-            stub = _grpc.tpc_pb2_grpc.NodeStub(channel)
-            node_request = _grpc.tpc_pb2.WorkRequest(work=request.work, address=request.address)
-            retval = stub.ReceiveWork(node_request)
-            print(retval.success)
+        # with grpc.insecure_channel("localhost:8889") as channel:
+        #     stub = _grpc.tpc_pb2_grpc.NodeStub(channel)
+        #     node_request = _grpc.tpc_pb2.WorkRequest(work=request.work, address=request.address)
+        #     retval = stub.ReceiveWork(node_request)
+        #     print(retval.success)
 
         response = _grpc.tpc_pb2.WorkResponse(success="this was a success!")
         return response
