@@ -24,8 +24,14 @@ Nodes:
     - Determine if we can do the work
     - If we can, vote yes
     - If not, TODO
+    
+TODO CLIENT:
+- Add timestamps to requests!s
 
-Nodes:
+Notes:
+- There is currently a bug where a request from a client causes a crash.
+The crash goes away when I comment out the code that sends the ReceiveWork 
+RPCs in the coordinator (could have to do with processing time?)
 
 
 GRPC:

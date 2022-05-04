@@ -17,7 +17,7 @@ class Coordinator():
         print("STARTING COORDINATOR")
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         _grpc.tpc_pb2_grpc.add_CoordinatorServicer_to_server(
-            CoordinatorGRPC(), server)
+            CoordinatorGRPC(self), server)
         server.add_insecure_port(self.config.url)
         server.start()
         server.wait_for_termination()
@@ -42,12 +42,16 @@ class Coordinator():
 #TODO: pk empty string should be an error
 #TODO: abstract out the logic that determines if a node should accept certain data (for tx in work section)
 class CoordinatorGRPC(_grpc.tpc_pb2_grpc.CoordinatorServicer):
+    def __init__(self, coord):
+        super().__init__()
+        self.coord = coord
+
     def SendWork(self, request, context):
         work = request.work
         if len(work) == 0:
             return _grpc.tpc_pb2.WorkResponse(success="no work given, operation aborted")
 
-        address = C.deploy()
+        address = self.coord.deploy()
         for node in SYSCONFIG.nodes:
             with grpc.insecure_channel(node.url) as channel:
                 stub = _grpc.tpc_pb2_grpc.NodeStub(channel)
@@ -69,10 +73,7 @@ class CoordinatorGRPC(_grpc.tpc_pb2_grpc.CoordinatorServicer):
         return response
 
 
-C = None
-
-def coordinator():
-    global C
+def run_coordinator():
     print("starting up the coordinator...")
     source = "contracts/TPC.sol"
     w3 = W3HTTPConnection()
@@ -82,4 +83,4 @@ def coordinator():
     return C
 
 
-coordinator()
+run_coordinator()

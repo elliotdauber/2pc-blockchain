@@ -17,7 +17,7 @@ class Node:
         print("STARTING NODE SERVER " + str(self.config.id))
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         _grpc.tpc_pb2_grpc.add_NodeServicer_to_server(
-            NodeGRPC(), server)
+            NodeGRPC(self), server)
         server.add_insecure_port(self.config.url)
         server.start()
         server.wait_for_termination()
@@ -78,25 +78,26 @@ class Node:
 
 
 class NodeGRPC(_grpc.tpc_pb2_grpc.NodeServicer):
+    def __init__(self, node):
+        super().__init__()
+        self.node = node
+
     def ReceiveWork(self, request, context):
         work = request.work
         print("printing work for node: ")
         print(request.address)
         for tx in work:
             print(tx)
-            #N.transact(tx) #TODO REMOVE THIS
+            #self.node.transact(tx) #TODO REMOVE THIS
         print("done printing work for node")
         response = _grpc.tpc_pb2.WorkResponse(success="from node, this was a success!")
-        if N.can_transact(request.work):
-            N.voter(True)
+        if self.node.can_transact(request.work):
+            self.node.voter(True)
         else:
-            N.voter(False)
+            self.node.voter(False)
         return response
 
-
-N = None
-
-def node(index):
+def run_node(index):
     global N
     print("starting up a node...")
     w3 = W3HTTPConnection()
@@ -109,7 +110,7 @@ def node(index):
 def main():
     index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
     assert(0 <= index < len(SYSCONFIG.nodes))
-    node(SYSCONFIG.nodes[index])
+    run_node(SYSCONFIG.nodes[index])
 
 
 if __name__ == "__main__":
