@@ -9,7 +9,7 @@ pragma solidity >=0.7.0 <0.9.0;
 contract TPC {
 
     enum State{ INIT, VOTING, COMMIT, ABORT }
-    mapping (uint32 => uint8) public _votes;
+    mapping (uint32 => uint32) public _votes;
     uint32 _num_nodes;
     uint256 public _timeout;
     State public _state = State.INIT;
@@ -23,10 +23,10 @@ contract TPC {
     }
 
     //TODO finish
-    function voter(uint8 vote, uint32 nodeid) public {
-        assert(_state == State.VOTING);
-        assert(vote == 1);
-        _votes[nodeid] = vote;
+    function voter(uint32 vote, uint32 nodeid) public {
+        //assert(_state == State.VOTING);
+        //assert(vote == 1);
+        //_votes[nodeid] = vote;
         //_if _voted == _participants
         _state = State.COMMIT;
     }

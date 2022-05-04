@@ -14,6 +14,7 @@ class XNode:
         self.config = config
         self.w3 = w3
         self.working_contracts = {}
+        self.coordinating_contracts = {}
         self.working_pk = set()
 
     # NODE FUNCTIONS
@@ -36,8 +37,8 @@ class XNode:
         contract = self.working_contracts.get(address)["contract"]
         if contract is None:
             return
-        # state = contract.functions.voter(vote).transact()
-        # print(state)
+        print("VOTING " + str(vote) + " on contract " + address)
+        #contract.functions.voter(vote, 1).transact() #TODO: put nodeid instead of 1
         # if state == "COMMIT":
         #     pass
         #     #TODO
@@ -89,14 +90,12 @@ class XNode:
                 # TODO: subtract operation (make sure column is int first)
                 pass
 
-
-
     # COORDINATOR FUNCTIONS
 
-    def request(self, address):
+    def request(self, address, num_nodes):
         timeout = 10
-        contract = self.working_contracts.get(address)["contract"]
-        contract.functions.request(len(self.nodes), timeout).transact()
+        contract = self.coordinating_contracts.get(address)["contract"]
+        contract.functions.request(num_nodes, timeout).transact()
         pass
 
 
@@ -137,22 +136,37 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             return _grpc.tpc_pb2.WorkResponse(success="no work given, operation aborted")
 
         address = self.xnode.contract.deploy()
+        print("deployed at address " + address)
+
+        # figuring out where to send the data
+        to_send = {} # node.url to WorkRequest
         for node in SYSCONFIGX.nodes:
-            with grpc.insecure_channel(node.url) as channel:
+            node_request = _grpc.tpc_pb2.WorkRequest(address=address)
+
+            for tx in work:
+                pk = tx.pk
+                if pk == "":
+                    continue
+                first = pk[0].lower()
+                if node.pk_range[0] <= first <= node.pk_range[1]:
+                    node_request.work.append(tx)
+
+            if len(node_request.work) > 0:
+                to_send[node.url] = node_request
+
+        for url, request in to_send.items():
+            with grpc.insecure_channel(url) as channel:
                 stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
-                node_request = _grpc.tpc_pb2.WorkRequest(address=address)
+                retval = stub.ReceiveWork(request)
+                print(retval)
 
-                for tx in work:
-                    pk = tx.pk
-                    if pk == "":
-                        continue
-                    first = pk[0].lower()
-                    if node.pk_range[0] <= first <= node.pk_range[1]:
-                        node_request.work.append(tx)
-
-                if len(node_request.work) > 0:
-                    retval = stub.ReceiveWork(node_request)
-                    print(retval)
+        # store contract
+        contract = self.xnode.w3.eth.contract(address=address, abi=self.xnode.contract.abi)
+        self.xnode.coordinating_contracts[address] = {
+            "contract": contract,
+            "work": work
+        }
+        self.xnode.request(address, len(to_send))
 
         response = _grpc.tpc_pb2.WorkResponse(success="this was a success!")
         return response
