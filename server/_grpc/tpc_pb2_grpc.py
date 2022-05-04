@@ -133,3 +133,97 @@ class Node(object):
             tpc__pb2.WorkResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+
+class XNodeStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.SendWork = channel.unary_unary(
+                '/tpc.XNode/SendWork',
+                request_serializer=tpc__pb2.WorkRequest.SerializeToString,
+                response_deserializer=tpc__pb2.WorkResponse.FromString,
+                )
+        self.ReceiveWork = channel.unary_unary(
+                '/tpc.XNode/ReceiveWork',
+                request_serializer=tpc__pb2.WorkRequest.SerializeToString,
+                response_deserializer=tpc__pb2.WorkResponse.FromString,
+                )
+
+
+class XNodeServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def SendWork(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ReceiveWork(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_XNodeServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'SendWork': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendWork,
+                    request_deserializer=tpc__pb2.WorkRequest.FromString,
+                    response_serializer=tpc__pb2.WorkResponse.SerializeToString,
+            ),
+            'ReceiveWork': grpc.unary_unary_rpc_method_handler(
+                    servicer.ReceiveWork,
+                    request_deserializer=tpc__pb2.WorkRequest.FromString,
+                    response_serializer=tpc__pb2.WorkResponse.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'tpc.XNode', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+
+
+ # This class is part of an EXPERIMENTAL API.
+class XNode(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def SendWork(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/tpc.XNode/SendWork',
+            tpc__pb2.WorkRequest.SerializeToString,
+            tpc__pb2.WorkResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ReceiveWork(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/tpc.XNode/ReceiveWork',
+            tpc__pb2.WorkRequest.SerializeToString,
+            tpc__pb2.WorkResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

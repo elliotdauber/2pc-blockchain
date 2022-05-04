@@ -33,6 +33,11 @@ service Node {
   rpc ReceiveWork (WorkRequest) returns (WorkResponse) {}
 }
 
+service XNode {
+    rpc SendWork (WorkRequest) returns (WorkResponse) {}
+    rpc ReceiveWork (WorkRequest) returns (WorkResponse) {}
+}
+
 message Transaction {
     string access = 1;
     string pk = 2;

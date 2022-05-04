@@ -5,7 +5,7 @@ import _grpc.tpc_pb2
 class Client:
     def makeRequest(self, transactions):
         with grpc.insecure_channel("localhost:8888") as channel:
-            stub = _grpc.tpc_pb2_grpc.CoordinatorStub(channel)
+            stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
             request = _grpc.tpc_pb2.WorkRequest()
             for t in transactions:
                 transaction = _grpc.tpc_pb2.Transaction(

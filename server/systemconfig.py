@@ -28,3 +28,20 @@ _NODES = [
 _COORD = CoordinatorConfig("localhost:8888")
 
 SYSCONFIG = SystemConfig(_NODES, _COORD)
+
+
+
+
+class SystemConfigX:
+    def __init__(self, nodes):
+        self.nodes = nodes
+
+
+_NODESX = [
+    NodeConfig(id=0, url="localhost:8887", table=tables[0], pk_range=["a", "h"]),
+    NodeConfig(id=1, url="localhost:8888", table=tables[1], pk_range=["i", "o"]),
+    NodeConfig(id=2, url="localhost:8889", table=tables[2], pk_range=["p", "z"])
+]
+
+
+SYSCONFIGX = SystemConfigX(_NODESX)
