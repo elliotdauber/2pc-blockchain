@@ -40,4 +40,5 @@ class Contract:
         tx_hash = self.contract_bin.constructor().transact()
         tx_receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
         self.deployments += 1
-        return self.w3.eth.contract(address=tx_receipt.contractAddress, abi=self.abi)
+        #self.w3.eth.contract(address=tx_receipt.contractAddress, abi=self.abi)
+        return tx_receipt.contractAddress

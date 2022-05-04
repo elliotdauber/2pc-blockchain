@@ -13,7 +13,7 @@ class XNode:
 
         self.config = config
         self.w3 = w3
-        self.working_contracts = []
+        self.working_contracts = {}
         self.working_pk = set()
 
     # NODE FUNCTIONS
@@ -32,20 +32,28 @@ class XNode:
         return all([action.pk not in self.working_pk for action in work])
 
     #TODO: add address param
-    def voter(self, vote):
-        state = "COMMIT"  # self.contract.functions.voter(1).transact()
-        if state == "COMMIT":
-            pass
-            #TODO
-        elif state == "VOTING":
-            pass
-            #TODO
+    def voter(self, address, vote):
+        contract = self.working_contracts.get(address)["contract"]
+        if contract is None:
+            return
+        # state = contract.functions.voter(vote).transact()
+        # print(state)
+        # if state == "COMMIT":
+        #     pass
+        #     #TODO
+        # elif state == "VOTING":
+        #     pass
+        #     #TODO
 
     def verdict(self, address, vote):
-        state = self.contract.functions.verdict.transact()
-        if state == "ABORT":
-            pass
-            #TODO
+        contract = self.working_contracts.get(address)["contract"]
+        if contract is None:
+            return
+        # state = contract.functions.verdict.transact()
+        # print(state)
+        # if state == "ABORT":
+        #     pass
+        #     #TODO
 
     #logic: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html
     def transact(self, tx):
@@ -53,7 +61,7 @@ class XNode:
         action = tx.action[0] if tx.action != "" else ""
         if tx.access == "read":
             response = table.get_item(
-                Key = {
+                Key={
                     "pk": tx.pk
                 }
             )
@@ -87,12 +95,9 @@ class XNode:
 
     def request(self, address):
         timeout = 10
-        self.contract.functions.request(len(self.nodes), timeout).transact()
+        contract = self.working_contracts.get(address)["contract"]
+        contract.functions.request(len(self.nodes), timeout).transact()
         pass
-
-    def deploy(self):
-        contract = self.contract.deploy()
-        return contract.address
 
 
 
@@ -104,24 +109,34 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
 
     def ReceiveWork(self, request, context):
         work = request.work
+        address = request.address
         print("printing work for node: ")
         print(request.address)
-        for tx in work:
+        for tx in request.work:
             print(tx)
         print("done printing work for node")
-        response = _grpc.tpc_pb2.WorkResponse(success="from node, this was a success!")
-        if self.xnode.can_transact(request.work):
-            self.xnode.voter(True)
+
+        contract = self.xnode.w3.eth.contract(address=address, abi=self.xnode.contract.abi)
+        self.xnode.working_contracts[address] = {
+            "contract": contract,
+            "work": work
+        }
+        if self.xnode.can_transact(work):
+            self.xnode.voter(address, 1)
         else:
-            self.xnode.voter(False)
+            self.xnode.voter(address, 0)
+
+        response = _grpc.tpc_pb2.WorkResponse(success="from node, this was a success!")
         return response
+
+
 
     def SendWork(self, request, context):
         work = request.work
         if len(work) == 0:
             return _grpc.tpc_pb2.WorkResponse(success="no work given, operation aborted")
 
-        address = self.xnode.deploy()
+        address = self.xnode.contract.deploy()
         for node in SYSCONFIGX.nodes:
             with grpc.insecure_channel(node.url) as channel:
                 stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
