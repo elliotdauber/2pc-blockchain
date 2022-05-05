@@ -7,12 +7,32 @@ pragma solidity >=0.7.0 <0.9.0;
  * @dev Store & retrieve value in a variable
  */
 contract TPC {
+    struct Set {
+        uint32[] values;
+        mapping (uint32 => bool) is_in;
+    }
+
 
     enum State{ INIT, VOTING, COMMIT, ABORT }
-    mapping (uint32 => uint32) public _votes;
     uint32 _num_nodes;
     uint256 public _timeout;
     State public _state = State.INIT;
+    Set _voters;
+
+    function set_contains(Set storage s, uint32 a) private returns (bool) {
+        return s.is_in[a];
+    }
+
+    function set_add(Set storage s, uint32 a) private {
+        if (!set_contains(s, a)) {
+            s.values.push(a);
+            s.is_in[a] = true;
+        }
+    }
+
+    function set_size(Set storage s) private returns (uint) {
+        return s.values.length;
+    }
 
     //TODO finish
     function request(uint32 num_nodes, uint256 timeout) public {
@@ -24,11 +44,15 @@ contract TPC {
 
     //TODO finish
     function voter(uint32 vote, uint32 nodeid) public {
-        //assert(_state == State.VOTING);
-        //assert(vote == 1);
-        //_votes[nodeid] = vote;
-        //_if _voted == _participants
-        _state = State.COMMIT;
+        assert(_state == State.VOTING);
+        if (vote == 0) {
+            _state = State.ABORT;
+            return;
+        }
+        set_add(_voters, nodeid);
+        if (set_size(_voters) == _num_nodes) {
+            _state = State.COMMIT;
+        }
     }
 
     function verdict() public {
