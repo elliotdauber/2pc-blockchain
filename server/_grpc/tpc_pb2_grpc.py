@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-import tpc_pb2 as tpc__pb2
+import _grpc.tpc_pb2 as tpc__pb2
 
 
 class CoordinatorStub(object):

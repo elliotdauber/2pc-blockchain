@@ -79,14 +79,14 @@ class BankClient(Client):
 
 def simple_test(c):
     c.CREATE_ACCOUNT("elliot")
-    # c.CREATE_ACCOUNT("nick")
-    # c.CREATE_ACCOUNT("zach")
-    # c.DEPOSIT("elliot", 15)
-    # c.TRANSFER("elliot", "zach", 10)
-    # c.CHECK_BALANCE("elliot")
-    # c.CHECK_BALANCE("nick")
-    # c.CHECK_BALANCE("zach")
-    # c.DELETE_ACCOUNT("nick")
+    c.CREATE_ACCOUNT("nick")
+    c.CREATE_ACCOUNT("zach")
+    c.DEPOSIT("elliot", 15)
+    c.TRANSFER("elliot", "zach", 10)
+    c.CHECK_BALANCE("elliot")
+    c.CHECK_BALANCE("nick")
+    c.CHECK_BALANCE("zach")
+    c.DELETE_ACCOUNT("nick")
 
 def client():
     c = BankClient()

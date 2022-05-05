@@ -5,6 +5,14 @@ import _grpc.tpc_pb2_grpc
 from concurrent import futures
 from systemconfig import SYSCONFIGX
 from contract import Contract
+from colorama import Style
+
+color = ""
+
+def cprint(msg):
+    print(color + str(msg))
+    print(Style.RESET_ALL)
+
 
 class XNode:
     def __init__(self, w3, config, contract_file):
@@ -21,7 +29,7 @@ class XNode:
 
     def serve(self):
         # Initialize the server
-        print("STARTING XNODE SERVER " + str(self.config.id) + " @ " + self.config.url)
+        cprint("STARTING XNODE SERVER " + str(self.config.id) + " @ " + self.config.url)
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         _grpc.tpc_pb2_grpc.add_XNodeServicer_to_server(
             XNodeGRPC(self), server)
@@ -37,7 +45,7 @@ class XNode:
         contract = self.working_contracts.get(address)["contract"]
         if contract is None:
             return
-        print("VOTING " + str(vote) + " on contract " + address)
+        cprint("VOTING " + str(vote) + " on contract " + address)
         #contract.functions.voter(vote, 1).transact() #TODO: put nodeid instead of 1
         # if state == "COMMIT":
         #     pass
@@ -109,11 +117,11 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
     def ReceiveWork(self, request, context):
         work = request.work
         address = request.address
-        print("printing work for node: ")
-        print(request.address)
+        cprint("printing work for node: ")
+        cprint(request.address)
         for tx in request.work:
-            print(tx)
-        print("done printing work for node")
+            cprint(tx)
+        cprint("done printing work for node")
 
         contract = self.xnode.w3.eth.contract(address=address, abi=self.xnode.contract.abi)
         self.xnode.working_contracts[address] = {
@@ -136,7 +144,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             return _grpc.tpc_pb2.WorkResponse(success="no work given, operation aborted")
 
         address = self.xnode.contract.deploy()
-        print("deployed at address " + address)
+        cprint("deployed at address " + address)
 
         # figuring out where to send the data
         to_send = {} # node.url to WorkRequest
@@ -158,7 +166,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             with grpc.insecure_channel(url) as channel:
                 stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
                 retval = stub.ReceiveWork(request)
-                print(retval)
+                cprint(retval)
 
         # store contract
         contract = self.xnode.w3.eth.contract(address=address, abi=self.xnode.contract.abi)
@@ -166,14 +174,14 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             "contract": contract,
             "work": work
         }
-        self.xnode.request(address, len(to_send))
+        # self.xnode.request(address, len(to_send))
 
         response = _grpc.tpc_pb2.WorkResponse(success="this was a success!")
         return response
 
 
 def run_xnode(config):
-    print("starting up a node...")
+    cprint("starting up a node...")
     w3 = W3HTTPConnection()
     assert(w3.isConnected())
     source = "contracts/TPC.sol"
@@ -185,6 +193,8 @@ def run_xnode(config):
 def main():
     index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
     assert(0 <= index < len(SYSCONFIGX.nodes))
+    global color
+    color = SYSCONFIGX.nodes[index].color
     run_xnode(SYSCONFIGX.nodes[index])
 
 

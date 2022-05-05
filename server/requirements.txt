@@ -3,3 +3,4 @@ py-solc-x
 boto3 
 grpcio
 grpcio-tools
+colorama
