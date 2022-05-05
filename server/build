@@ -1,0 +1,7 @@
+#!/bin/bash
+
+source server_env/bin/activate
+
+python3 -m grpc_tools.protoc -I./protos --python_out=./_grpc --grpc_python_out=./_grpc ./protos/tpc.proto
+
+deactivate

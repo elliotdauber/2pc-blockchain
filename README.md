@@ -5,12 +5,20 @@ Final Project for Stanford University CS244B (Distributed Systems)
 2 phase commit protocol using a blockchain coordinator
 
 Steps for running:
-- Run ganache-cli
-- In another terminal:
-- cd server
-- bin source/activate
-- python3 system.py
-- deactivate
+- Open 5 Terminals
+- Terminal 1:
+    - ./setup
+    - ./build
+    - Run ganache-cli
+- Terminal 2 - 4:
+    - cd server
+    - source server_env/bin/activate
+    - python3 xnode.py 0, 1, 2 (for terminals 2,3,4 respectively)
+- Terminal 5;
+    - cd server
+    - source server_env/bin/activate
+    - python3 client.py
+
 
 TODO:
 Coordinator:
@@ -39,16 +47,6 @@ If you update tpc.proto:
 - cd server
 - run python -m grpc_tools.protoc -I./protos --python_out=./_grpc --grpc_python_out=./_grpc ./protos/tpc.proto
 - change "import tpc_pb2 as tpc__pb2" to "import _grpc.tpc_pb2 as tpc__pb2" in _grpc/tpc_pb2_grpc.py
-
-
-Steps for running:
-- Run ganache-cli
-- In 3 terminals:
-- cd server
-- bin source/activate
-- Run in this order: coordinator, node, client 
-- deactivate
-
 
 Resources:
 Paper: https://dl.acm.org/doi/pdf/10.1145/3211933.3211940

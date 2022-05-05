@@ -1,0 +1,16 @@
+#!/bin/bash
+# Creates servers virtual environment
+# and installs required packages
+
+python3 -m pip install --upgrade pip
+python3 -m venv server_env
+source "server_env/bin/activate"
+python3 -m pip install --upgrade pip
+
+input="requirements.txt"
+while read -r line
+do
+  python3 -m pip install "$line"
+done < "$input"
+
+deactivate

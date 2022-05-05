@@ -23,7 +23,8 @@ class Node:
         server.wait_for_termination()
 
     def can_transact(self, work):
-        return all([action.pk not in self.working_pk for action in work])
+        return any([action.pk in self.working_pk for action in work])
+        # we need to check if the row actually exists
 
     def voter(self, vote):
         state = "COMMIT"  # self.contract.functions.voter(1).transact()
