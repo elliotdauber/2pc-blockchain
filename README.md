@@ -6,9 +6,11 @@ Final Project for Stanford University CS244B (Distributed Systems)
 
 Steps for running:
 - Open 5 Terminals
-- Terminal 1:
+- Terminal 1
+    - cd server
     - ./setup
     - ./build
+    - cd ..
     - Run ganache-cli
 - Terminal 2 - 4:
     - cd server
