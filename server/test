@@ -2,13 +2,17 @@
 
 # runs 3 server instances and the client
 
+source server_env/bin/activate
+
 python3 xnode.py 0 &
 python3 xnode.py 1 &
 python3 xnode.py 2 &
 sleep 3
 while true
 do
-  printf "Enter a command: "
+  result=${PWD##*/} 
+  me=$USER
+  printf "${me}:${result}$ "
   read input </dev/tty
   $input
 done
