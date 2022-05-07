@@ -13,7 +13,7 @@ contract TPC {
     }
 
 
-    enum State{ INIT, VOTING, COMMIT, ABORT }
+    enum State{ INIT, VOTING, COMMIT, ABORT, TIMEOUT }
     uint32 _num_nodes;
     uint256 public _timeout;
     State public _state = State.INIT;
@@ -37,15 +37,17 @@ contract TPC {
     //TODO finish
     function request(uint32 num_nodes, uint256 timeout) public {
         assert(_state == State.INIT);
-        _timeout = timeout;
+        _timeout = block.timestamp + timeout;
         _num_nodes = num_nodes;
         _state = State.VOTING;
     }
 
     //TODO finish
     function voter(uint32 vote, uint32 nodeid) public {
-        assert(_state == State.VOTING);
-        if (vote == 0) {
+        if (block.timestamp > _timeout) {
+            _state = State.TIMEOUT;
+            return;
+        } else if (vote == 0) {
             _state = State.ABORT;
             return;
         }
@@ -64,6 +66,7 @@ contract TPC {
         if (_state == State.VOTING) {return "VOTING";}
         if (_state == State.COMMIT) {return "COMMIT";}
         if (_state == State.ABORT) {return "ABORT";}
+        if (_state == State.TIMEOUT) {return "TIMEOUT";}
         return "NONE";
     }
 }

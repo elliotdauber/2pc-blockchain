@@ -1,6 +1,16 @@
 import grpc
 import _grpc.tpc_pb2_grpc
 import _grpc.tpc_pb2
+import asyncio
+
+async def waiter(event, address):
+    await event.wait()
+    print("event received: ", address)
+
+async def wait(event, timeout):
+    await asyncio.sleep(timeout)
+    event.set()
+
 
 class Client:
     def makeRequest(self, transactions):
@@ -16,6 +26,12 @@ class Client:
                 )
                 request.work.append(transaction)
             retval = stub.SendWork(request)
+
+            address = retval.success
+            timeout = 10  # todo: get from retval, edit proto
+            event = asyncio.Event()
+            task = asyncio.create_task(waiter(event, address))
+            wait(event, timeout)
             print(retval)
 
 class BankClient(Client):
