@@ -2,3 +2,4 @@ server/nodeconfig.py
 server/server_env
 server/log*.txt
 server/db*.db
+server/lib
