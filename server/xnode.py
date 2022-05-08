@@ -46,7 +46,7 @@ class XNode:
         if contract is None:
             return
         cprint("VOTING " + str(vote) + " on contract " + address)
-        #contract.functions.voter(vote, 1).transact() #TODO: put nodeid instead of 1
+        # contract.functions.voter(vote, 1).transact() #TODO: put nodeid instead of 1
         # if state == "COMMIT":
         #     pass
         #     #TODO
@@ -100,8 +100,7 @@ class XNode:
 
     # COORDINATOR FUNCTIONS
 
-    def request(self, address, num_nodes):
-        timeout = 10
+    def request(self, address, num_nodes, timeout):
         contract = self.coordinating_contracts.get(address)["contract"]
         contract.functions.request(num_nodes, timeout).transact()
         pass
@@ -133,7 +132,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         else:
             self.xnode.voter(address, 0)
 
-        response = _grpc.tpc_pb2.WorkResponse(success="from node, this was a success!")
+        response = _grpc.tpc_pb2.WorkResponse()
         return response
 
 
@@ -141,7 +140,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
     def SendWork(self, request, context):
         work = request.work
         if len(work) == 0:
-            return _grpc.tpc_pb2.WorkResponse(success="no work given, operation aborted")
+            return _grpc.tpc_pb2.WorkResponse(error="no work given, operation aborted")
 
         address = self.xnode.contract.deploy()
         cprint("deployed at address " + address)
@@ -174,9 +173,11 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             "contract": contract,
             "work": work
         }
-        # self.xnode.request(address, len(to_send))
 
-        response = _grpc.tpc_pb2.WorkResponse(success="this was a success!")
+        timeout = 5
+        self.xnode.request(address, len(to_send), timeout)
+
+        response = _grpc.tpc_pb2.WorkResponse(address=address, timeout=timeout)
         return response
 
 

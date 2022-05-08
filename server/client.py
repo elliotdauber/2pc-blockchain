@@ -1,18 +1,22 @@
 import grpc
 import _grpc.tpc_pb2_grpc
 import _grpc.tpc_pb2
-import asyncio
-
-async def waiter(event, address):
-    await event.wait()
-    print("event received: ", address)
-
-async def wait(event, timeout):
-    await asyncio.sleep(timeout)
-    event.set()
-
+import threading
+from contract import Contract
+from w3connection import W3HTTPConnection
 
 class Client:
+    def __init__(self, abi, w3):
+        self.abi = abi
+        self.w3 = w3
+
+    def checkTxStatus(self, address):
+        print("checking the status of the contract at: ", address)
+        contract = self.w3.eth.contract(address=address, abi=self.abi)
+        state = contract.functions.getState().call()
+        print("state: ", state)
+
+
     def makeRequest(self, transactions):
         with grpc.insecure_channel("localhost:8888") as channel:
             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
@@ -26,13 +30,8 @@ class Client:
                 )
                 request.work.append(transaction)
             retval = stub.SendWork(request)
-
-            address = retval.success
-            timeout = 10  # todo: get from retval, edit proto
-            event = asyncio.Event()
-            task = asyncio.create_task(waiter(event, address))
-            wait(event, timeout)
-            print(retval)
+            thread = threading.Timer(retval.timeout, self.checkTxStatus, [retval.address])
+            thread.start()
 
 class BankClient(Client):
     def DEPOSIT(self, account, amount):
@@ -105,7 +104,10 @@ def simple_test(c):
     c.DELETE_ACCOUNT("nick")
 
 def client():
-    c = BankClient()
+    w3 = W3HTTPConnection()
+    contract = Contract("contracts/TPC.sol", w3.w3)
+    w3 = W3HTTPConnection()
+    c = BankClient(contract.abi, w3.w3)
     simple_test(c)
 
 if __name__ == "__main__":
