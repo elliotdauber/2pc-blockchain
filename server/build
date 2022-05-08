@@ -4,4 +4,6 @@ source server_env/bin/activate
 
 python3 -m grpc_tools.protoc -I./protos --python_out=./_grpc --grpc_python_out=./_grpc ./protos/tpc.proto
 
+sed -i '' -e 's/import tpc_pb2 as tpc__pb2/import _grpc.tpc_pb2 as tpc__pb2/' _grpc/tpc_pb2_grpc.py
+
 deactivate
