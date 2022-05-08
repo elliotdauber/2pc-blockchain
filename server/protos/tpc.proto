@@ -53,5 +53,7 @@ message WorkRequest {
 
 // The response message containing the greetings
 message WorkResponse {
-  string success = 1;
+  string address = 1;
+  int32 timeout = 2;
+  string error = 3;
 }
