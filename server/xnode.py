@@ -110,7 +110,7 @@ class XNode:
             self.transact(tx)
 
 
-    def checkTxStatus(self, address):
+    async def checkTxStatus(self, address):
         working_contract = self.working_contracts.get(address)
         if working_contract is None:
             return

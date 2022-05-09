@@ -1,10 +1,10 @@
 import grpc
 import _grpc.tpc_pb2_grpc
 import _grpc.tpc_pb2
-import threading
+import asyncio
 from contract import Contract
 from w3connection import W3HTTPConnection
-import asyncio
+
 
 def cback_default(state, args):
     print("state: ", state)
