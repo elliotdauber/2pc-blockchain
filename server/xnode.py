@@ -25,7 +25,6 @@ class XNode:
         self.working_contracts = {}
         self.coordinating_contracts = {}
         self.working_pk = set()
-        self.logfile = open(config.logfile, 'a+')
 
     # NODE FUNCTIONS
 
@@ -40,7 +39,8 @@ class XNode:
         server.wait_for_termination()
 
     def log(self, text):
-        self.logfile.write(text + "\n")
+        with open(self.config.logfile, 'a+') as f:
+            f.write(text + "\n")
 
     def can_transact(self, work):
         if all([action.pk not in self.working_pk for action in work]):
