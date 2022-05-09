@@ -5,19 +5,26 @@ import threading
 from contract import Contract
 from w3connection import W3HTTPConnection
 
+def cback_default(state, args):
+    print("state: ", state)
+
 class Client:
     def __init__(self, abi, w3):
         self.abi = abi
         self.w3 = w3
 
-    def checkTxStatus(self, address):
+    def checkTxStatus(self, address, callback, args):
         print("checking the status of the contract at: ", address)
         contract = self.w3.eth.contract(address=address, abi=self.abi)
+        tx_hash = contract.functions.verdict().transact()
+        self.w3.eth.wait_for_transaction_receipt(tx_hash)
         state = contract.functions.getState().call()
-        print("state: ", state)
+        callback(state, args)
 
 
-    def makeRequest(self, transactions):
+    def makeRequest(self, transactions, callback=cback_default, args=None):
+        if args is None:
+            args = []
         with grpc.insecure_channel("localhost:8888") as channel:
             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
             request = _grpc.tpc_pb2.WorkRequest()
@@ -30,7 +37,7 @@ class Client:
                 )
                 request.work.append(transaction)
             retval = stub.SendWork(request)
-            thread = threading.Timer(retval.timeout, self.checkTxStatus, [retval.address])
+            thread = threading.Timer(retval.timeout, self.checkTxStatus, [retval.address, callback, args])
             thread.start()
 
 class BankClient(Client):
