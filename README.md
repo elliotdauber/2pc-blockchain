@@ -54,3 +54,5 @@ Resources:
 Paper: https://dl.acm.org/doi/pdf/10.1145/3211933.3211940
 Aleth: https://github.com/ethereum/aleth
 web3.py: https://web3py.readthedocs.io/en/stable/quickstart.html
+
+could use mysql database? https://www.w3schools.com/python/python_mysql_getstarted.asp

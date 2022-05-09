@@ -6,38 +6,6 @@
 	"output": {
 		"abi": [
 			{
-				"inputs": [
-					{
-						"internalType": "uint256",
-						"name": "",
-						"type": "uint256"
-					}
-				],
-				"name": "_participants",
-				"outputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [],
-				"name": "_state",
-				"outputs": [
-					{
-						"internalType": "enum TPC.State",
-						"name": "",
-						"type": "uint8"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
 				"inputs": [],
 				"name": "_timeout",
 				"outputs": [
@@ -45,25 +13,6 @@
 						"internalType": "uint256",
 						"name": "",
 						"type": "uint256"
-					}
-				],
-				"stateMutability": "view",
-				"type": "function"
-			},
-			{
-				"inputs": [
-					{
-						"internalType": "uint256",
-						"name": "",
-						"type": "uint256"
-					}
-				],
-				"name": "_voted",
-				"outputs": [
-					{
-						"internalType": "address",
-						"name": "",
-						"type": "address"
 					}
 				],
 				"stateMutability": "view",
@@ -85,9 +34,9 @@
 			{
 				"inputs": [
 					{
-						"internalType": "address[]",
-						"name": "participants",
-						"type": "address[]"
+						"internalType": "uint32",
+						"name": "num_nodes",
+						"type": "uint32"
 					},
 					{
 						"internalType": "uint256",
@@ -110,9 +59,14 @@
 			{
 				"inputs": [
 					{
-						"internalType": "int256",
+						"internalType": "uint32",
 						"name": "vote",
-						"type": "int256"
+						"type": "uint32"
+					},
+					{
+						"internalType": "uint32",
+						"name": "nodeid",
+						"type": "uint32"
 					}
 				],
 				"name": "voter",
@@ -151,11 +105,11 @@
 	},
 	"sources": {
 		"contracts/TPC.sol": {
-			"keccak256": "0x18e3bda0cb3a97c879de67772aa94af1eb944bbc380e25eb69075a3c91a8d954",
+			"keccak256": "0x9099982b857b09454fe4efb5c63b88a8c1809754f6615261f26ee9dac6dea475",
 			"license": "GPL-3.0",
 			"urls": [
-				"bzz-raw://057d285c58a473338f129f4acb8b23c9b4d64fe90bf1e860261002b403259f52",
-				"dweb:/ipfs/Qmb2EX5nwicvCSgb8fMFnE3PtPCYhF678G7oagU3odH1Qo"
+				"bzz-raw://4025c2a9a04f3e59d47b4ccaee8f6e92a19f7b4dec0964ab4483cdd1da1cc574",
+				"dweb:/ipfs/QmNtv8UsTumpCQ1noGA4LwaoUCW8FH35MNQSUCbHYb6Kty"
 			]
 		}
 	},

@@ -96,7 +96,7 @@ class XNode:
 
     def transact_multiple(self, work):
         for tx in work:
-            self.transact(tx)
+            self.transact(tx) # TODO: fix tx issues, then comment this back in, rethink database (local db)
 
 
     def checkTxStatus(self, address):
@@ -107,8 +107,10 @@ class XNode:
         tx_hash = contract.functions.verdict().transact()
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
         state = contract.functions.getState().call()
+        print("xnode " + str(self.config.id) + " found a " + state)
         if state == "COMMIT":
-            self.transact_multiple(working_contract["work"])
+            pass
+            # self.transact_multiple(working_contract["work"]) # TODO: fix tx issues, then comment this back in, rethink database (local db)
         elif state == "TIMEOUT":
             # TODO: backoff timeout?? send msg to all other nodes? how do we do this? (@isaac)
             pass
@@ -157,7 +159,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
 
 
     def SendWork(self, request, context):
-        timeout = 10  # TODO: SET THIS DYNAMICALLY? (@isaac)
+        timeout = 5  # TODO: SET THIS DYNAMICALLY? (@isaac)
         work = request.work
         if len(work) == 0:
             return _grpc.tpc_pb2.WorkResponse(error="no work given, operation aborted")
@@ -181,12 +183,6 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             if len(node_request.work) > 0:
                 to_send[node.url] = node_request
 
-        for url, request in to_send.items():
-            with grpc.insecure_channel(url) as channel:
-                stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
-                retval = stub.ReceiveWork(request)
-                cprint(retval)
-
         # store contract
         contract = self.xnode.w3.eth.contract(address=address, abi=self.xnode.contract.abi)
         self.xnode.coordinating_contracts[address] = {
@@ -195,6 +191,12 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         }
 
         self.xnode.request(address, len(to_send), timeout)
+
+        for url, request in to_send.items():
+            with grpc.insecure_channel(url) as channel:
+                stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
+                retval = stub.ReceiveWork(request)
+                cprint(retval)
 
         response = _grpc.tpc_pb2.WorkResponse(address=address, timeout=timeout)
         return response
