@@ -37,32 +37,25 @@ class XNode:
         server.start()
         server.wait_for_termination()
 
+    def log(self, text):
+        with open(self.config.logfile, "a+") as f:
+            f.write(text + "\n")
+
     def can_transact(self, work):
         return all([action.pk not in self.working_pk for action in work])
 
-    #TODO: add address param
     def voter(self, address, vote):
         contract = self.working_contracts.get(address)["contract"]
         if contract is None:
             return
         cprint("VOTING " + str(vote) + " on contract " + address)
         # contract.functions.voter(vote, 1).transact() #TODO: put nodeid instead of 1
-        # if state == "COMMIT":
-        #     pass
-        #     #TODO
-        # elif state == "VOTING":
-        #     pass
-        #     #TODO
 
     def verdict(self, address, vote):
         contract = self.working_contracts.get(address)["contract"]
         if contract is None:
             return
         # state = contract.functions.verdict.transact()
-        # print(state)
-        # if state == "ABORT":
-        #     pass
-        #     #TODO
 
     #logic: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html
     def transact(self, tx):
@@ -116,6 +109,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
     def ReceiveWork(self, request, context):
         work = request.work
         address = request.address
+        self.xnode.log(address) #TODO: log work too
         cprint("printing work for node: ")
         cprint(request.address)
         for tx in request.work:
