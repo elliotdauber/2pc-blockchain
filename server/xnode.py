@@ -9,6 +9,7 @@ from colorama import Style
 import threading
 
 
+
 color = ""
 
 def cprint(msg):
@@ -158,6 +159,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         else:
             self.xnode.voter(address, 0)
 
+        #TODO: Make this async andd build into wait for
         thread = threading.Timer(timeout, self.xnode.checkTxStatus, [address])
         thread.start()
 

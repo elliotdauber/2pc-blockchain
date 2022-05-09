@@ -4,6 +4,7 @@ import _grpc.tpc_pb2
 import threading
 from contract import Contract
 from w3connection import W3HTTPConnection
+import asyncio
 
 def cback_default(state, args):
     print("state: ", state)
@@ -13,16 +14,16 @@ class Client:
         self.abi = abi
         self.w3 = w3
 
-    def checkTxStatus(self, address, callback, args):
+    async def checkTxStatus(self, address, callback, timeout, args):
         print("checking the status of the contract at: ", address)
         contract = self.w3.eth.contract(address=address, abi=self.abi)
         tx_hash = contract.functions.verdict().transact()
-        self.w3.eth.wait_for_transaction_receipt(tx_hash)
+        await self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout)
         state = contract.functions.getState().call()
         callback(state, args)
 
 
-    def makeRequest(self, transactions, callback=cback_default, args=None):
+    async def makeRequest(self, transactions, callback=cback_default, args=None):
         if args is None:
             args = []
         with grpc.insecure_channel("localhost:8888") as channel:
@@ -37,8 +38,7 @@ class Client:
                 )
                 request.work.append(transaction)
             retval = stub.SendWork(request)
-            thread = threading.Timer(retval.timeout, self.checkTxStatus, [retval.address, callback, args])
-            thread.start()
+            await self.checkTxStatus(retval.address, callback, retval.timeout, args)
 
 #TODO: Maybe we should discuss how this opperates 
 # if we want these to run in parallel I think we
