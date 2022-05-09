@@ -7,6 +7,7 @@ from systemconfig import SYSCONFIGX
 from contract import Contract
 from colorama import Style
 
+
 color = ""
 
 def cprint(msg):
@@ -38,7 +39,10 @@ class XNode:
         server.wait_for_termination()
 
     def can_transact(self, work):
-        return all([action.pk not in self.working_pk for action in work])
+        if all([action.pk not in self.working_pk for action in work]):
+            for action in work: self.working_pk.add(action.pk)
+            return True
+        return False
 
     #TODO: add address param
     def voter(self, address, vote):
@@ -69,11 +73,14 @@ class XNode:
         table = self.config.table
         action = tx.action[0] if tx.action != "" else ""
         if tx.access == "read":
-            response = table.get_item(
-                Key={
-                    "pk": tx.pk
-                }
-            )
+            try:
+                response = table.get_item(
+                    Key={
+                        "pk": tx.pk
+                    }
+                )
+            except:
+                return None # Do we want this to return something else?
             if tx.column == "":
                 return response['Item']
             return response['Item'][tx.column] if tx.column in response['Item'] else None
@@ -86,11 +93,14 @@ class XNode:
                     }
                 )
             elif action == "~":
-                response = table.delete_item(
-                    Key={
-                        "pk": tx.pk
-                    }
-                )
+                try:
+                    response = table.delete_item(
+                        Key={
+                            "pk": tx.pk
+                        }
+                    )
+                except:
+                    return None
             elif action == '+':
                 # TODO: add operation (make sure column is int first)
                 pass
@@ -132,6 +142,8 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             self.xnode.voter(address, 1)
         else:
             self.xnode.voter(address, 0)
+
+        # Here we need to begin some process for nodes to know when to check the BC for 
 
         response = _grpc.tpc_pb2.WorkResponse(success="from node, this was a success!")
         return response

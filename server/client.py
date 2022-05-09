@@ -3,17 +3,12 @@ import _grpc.tpc_pb2_grpc
 import _grpc.tpc_pb2
 import asyncio
 
-async def waiter(event, address):
-    await event.wait()
+async def timer(timeout, address):
+    await asyncio.sleep(timeout)
     print("event received: ", address)
 
-async def wait(event, timeout):
-    await asyncio.sleep(timeout)
-    event.set()
-
-
 class Client:
-    def makeRequest(self, transactions):
+    async def makeRequest(self, transactions):
         with grpc.insecure_channel("localhost:8888") as channel:
             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
             request = _grpc.tpc_pb2.WorkRequest()
@@ -29,32 +24,34 @@ class Client:
 
             address = retval.success
             timeout = 10  # todo: get from retval, edit proto
-            event = asyncio.Event()
-            task = asyncio.create_task(waiter(event, address))
-            wait(event, timeout)
+            await timer(timeout, address)
             print(retval)
 
+#TODO: Maybe we should discuss how this opperates 
+# if we want these to run in parallel I think we
+# have to increase the number of async functions
+
 class BankClient(Client):
-    def DEPOSIT(self, account, amount):
+    async def DEPOSIT(self, account, amount):
         op1 = {
             "access": "write",
             "pk": account,
             "column": "balance",
             "action": "+" + str(amount)
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
     # for withdraw and transfer -- make a conditional to make sure user has necessary balance
-    def WITHDRAW(self, account, amount):
+    async def WITHDRAW(self, account, amount):
         op1 = {
             "access": "write",
             "pk": account,
             "column": "balance",
             "action": "-" + str(amount)
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
-    def TRANSFER(self, from_account, to_account, amount):
+    async def TRANSFER(self, from_account, to_account, amount):
         op1 = {
             "access": "write",
             "pk": from_account,
@@ -67,42 +64,44 @@ class BankClient(Client):
             "column": "balance",
             "action": "+" + str(amount)
         }
-        self.makeRequest([op1, op2])
+        await self.makeRequest([op1, op2])
 
-    def CHECK_BALANCE(self, account):
+    async def CHECK_BALANCE(self, account):
         op1 = {
             "access": "read",
             "pk": account,
             "column": "balance"
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
-    def CREATE_ACCOUNT(self, account):
+    async def CREATE_ACCOUNT(self, account):
         op1 = {
             "access": "write",
             "pk": account,
             "action": "&"
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
-    def DELETE_ACCOUNT(self, account):
+    async def DELETE_ACCOUNT(self, account):
         op1 = {
             "access": "write",
             "pk": account,
             "action": "~"
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
 def simple_test(c):
-    c.CREATE_ACCOUNT("elliot")
-    c.CREATE_ACCOUNT("nick")
-    c.CREATE_ACCOUNT("zach")
-    c.DEPOSIT("elliot", 15)
-    c.TRANSFER("elliot", "zach", 10)
-    c.CHECK_BALANCE("elliot")
-    c.CHECK_BALANCE("nick")
-    c.CHECK_BALANCE("zach")
-    c.DELETE_ACCOUNT("nick")
+    asyncio.run(asyncio.wait(
+        [c.CREATE_ACCOUNT("elliot"),
+        c.CREATE_ACCOUNT("nick"),
+        c.CREATE_ACCOUNT("zach"),
+        c.DEPOSIT("elliot", 15),
+        c.TRANSFER("elliot", "zach", 10),
+        c.CHECK_BALANCE("elliot"),
+        c.CHECK_BALANCE("nick"),
+        c.CHECK_BALANCE("zach"),
+        c.DELETE_ACCOUNT("nick")]
+    ))
 
 def client():
     c = BankClient()
