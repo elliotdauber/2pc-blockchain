@@ -58,7 +58,9 @@ contract TPC {
     }
 
     function verdict() public {
-        //TODO
+        if (keccak256(abi.encodePacked(_state)) == keccak256(abi.encodePacked("VOTING")) && block.timestamp > _timeout) {
+            _state = "TIMEOUT";
+        }
     }
 
     function getState() public view returns (string memory) {

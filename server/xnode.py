@@ -6,6 +6,7 @@ from concurrent import futures
 from systemconfig import SYSCONFIGX
 from contract import Contract
 from colorama import Style
+import threading
 
 
 color = ""
@@ -24,6 +25,7 @@ class XNode:
         self.working_contracts = {}
         self.coordinating_contracts = {}
         self.working_pk = set()
+        self.logfile = open(config.logfile, 'a+')
 
     # NODE FUNCTIONS
 
@@ -38,8 +40,7 @@ class XNode:
         server.wait_for_termination()
 
     def log(self, text):
-        with open(self.config.logfile, "a+") as f:
-            f.write(text + "\n")
+        self.logfile.write(text + "\n")
 
     def can_transact(self, work):
         if all([action.pk not in self.working_pk for action in work]):
@@ -103,13 +104,31 @@ class XNode:
                 # TODO: subtract operation (make sure column is int first)
                 pass
 
+    def transact_multiple(self, work):
+        for tx in work:
+            self.transact(tx)
+
+
+    def checkTxStatus(self, address):
+        working_contract = self.working_contracts.get(address)
+        if working_contract is None:
+            return
+        contract = working_contract["contract"]
+        tx_hash = contract.functions.verdict().transact()
+        self.w3.eth.wait_for_transaction_receipt(tx_hash)
+        state = contract.functions.getState().call()
+        if state == "COMMIT":
+            self.transact_multiple(working_contract["work"])
+        elif state == "TIMEOUT":
+            # TODO: backoff timeout?? send msg to all other nodes? how do we do this? (@isaac)
+            pass
+
     # COORDINATOR FUNCTIONS
 
     def request(self, address, num_nodes, timeout):
         contract = self.coordinating_contracts.get(address)["contract"]
         tx_hash = contract.functions.request(num_nodes, timeout).transact()
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
-        pass
 
 
 
@@ -122,7 +141,9 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
     def ReceiveWork(self, request, context):
         work = request.work
         address = request.address
+        timeout = request.timeout
         self.xnode.log(address) #TODO: log work too
+        self.xnode.log(str(work))
         cprint(request.address)
         for tx in request.work:
             cprint(tx)
@@ -137,12 +158,16 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         else:
             self.xnode.voter(address, 0)
 
+        thread = threading.Timer(timeout, self.xnode.checkTxStatus, [address])
+        thread.start()
+
         response = _grpc.tpc_pb2.WorkResponse()
         return response
 
 
 
     def SendWork(self, request, context):
+        timeout = 10  # TODO: SET THIS DYNAMICALLY? (@isaac)
         work = request.work
         if len(work) == 0:
             return _grpc.tpc_pb2.WorkResponse(error="no work given, operation aborted")
@@ -153,7 +178,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         # figuring out where to send the data
         to_send = {} # node.url to WorkRequest
         for node in SYSCONFIGX.nodes:
-            node_request = _grpc.tpc_pb2.WorkRequest(address=address)
+            node_request = _grpc.tpc_pb2.WorkRequest(address=address, timeout=timeout)
 
             for tx in work:
                 pk = tx.pk
@@ -179,7 +204,6 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             "work": work
         }
 
-        timeout = 5
         self.xnode.request(address, len(to_send), timeout)
 
         response = _grpc.tpc_pb2.WorkResponse(address=address, timeout=timeout)

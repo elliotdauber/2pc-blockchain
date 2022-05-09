@@ -49,6 +49,7 @@ message Transaction {
 message WorkRequest {
   repeated Transaction work = 1;
   string address = 2;
+  int32 timeout = 3;
 }
 
 // The response message containing the greetings
