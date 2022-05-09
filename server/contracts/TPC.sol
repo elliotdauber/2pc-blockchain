@@ -13,10 +13,10 @@ contract TPC {
     }
 
 
-    enum State{ INIT, VOTING, COMMIT, ABORT, TIMEOUT }
+    //enum State{ INIT, VOTING, COMMIT, ABORT, TIMEOUT }
     uint32 _num_nodes;
     uint256 public _timeout;
-    State public _state = State.INIT;
+    string _state = "INIT";
     Set _voters;
 
     function set_contains(Set storage s, uint32 a) private returns (bool) {
@@ -36,24 +36,24 @@ contract TPC {
 
     //TODO finish
     function request(uint32 num_nodes, uint256 timeout) public {
-        assert(_state == State.INIT);
         _timeout = block.timestamp + timeout;
         _num_nodes = num_nodes;
-        _state = State.VOTING;
+        _state = "VOTING";
     }
 
     //TODO finish
+
     function voter(uint32 vote, uint32 nodeid) public {
         if (block.timestamp > _timeout) {
-            _state = State.TIMEOUT;
+            _state = "TIMEOUT";
             return;
         } else if (vote == 0) {
-            _state = State.ABORT;
+            _state = "ABORT";
             return;
         }
         set_add(_voters, nodeid);
         if (set_size(_voters) == _num_nodes) {
-            _state = State.COMMIT;
+            _state = "COMMIT";
         }
     }
 
@@ -62,11 +62,6 @@ contract TPC {
     }
 
     function getState() public view returns (string memory) {
-        if (_state == State.INIT) {return "INIT";}
-        if (_state == State.VOTING) {return "VOTING";}
-        if (_state == State.COMMIT) {return "COMMIT";}
-        if (_state == State.ABORT) {return "ABORT";}
-        if (_state == State.TIMEOUT) {return "TIMEOUT";}
-        return "NONE";
+        return _state;
     }
 }

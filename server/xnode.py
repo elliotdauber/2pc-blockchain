@@ -11,8 +11,7 @@ from colorama import Style
 color = ""
 
 def cprint(msg):
-    print(color + str(msg))
-    print(Style.RESET_ALL)
+    print(color + str(msg) + Style.RESET_ALL)
 
 
 class XNode:
@@ -53,13 +52,16 @@ class XNode:
         if contract is None:
             return
         cprint("VOTING " + str(vote) + " on contract " + address)
-        # contract.functions.voter(vote, 1).transact() #TODO: put nodeid instead of 1
+        tx_hash = contract.functions.voter(vote, self.config.id).transact()
+        # self.w3.eth.wait_for_transaction_receipt(tx_hash) #TODO: maybe don't wait?
+
 
     def verdict(self, address, vote):
         contract = self.working_contracts.get(address)["contract"]
         if contract is None:
             return
-        # state = contract.functions.verdict.transact()
+        tx_hash = contract.functions.verdict.transact()
+        # self.w3.eth.wait_for_transaction_receipt(tx_hash) #TODO: maybe dont wait?
 
     #logic: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html
     def transact(self, tx):
@@ -105,7 +107,8 @@ class XNode:
 
     def request(self, address, num_nodes, timeout):
         contract = self.coordinating_contracts.get(address)["contract"]
-        contract.functions.request(num_nodes, timeout).transact()
+        tx_hash = contract.functions.request(num_nodes, timeout).transact()
+        self.w3.eth.wait_for_transaction_receipt(tx_hash)
         pass
 
 
@@ -120,11 +123,9 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         work = request.work
         address = request.address
         self.xnode.log(address) #TODO: log work too
-        cprint("printing work for node: ")
         cprint(request.address)
         for tx in request.work:
             cprint(tx)
-        cprint("done printing work for node")
 
         contract = self.xnode.w3.eth.contract(address=address, abi=self.xnode.contract.abi)
         self.xnode.working_contracts[address] = {
