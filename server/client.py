@@ -4,7 +4,9 @@ import _grpc.tpc_pb2
 import asyncio
 from contract import Contract
 from w3connection import W3HTTPConnection
+from systemconfig import SYSCONFIGX
 import time
+import random
 
 def cback_default(state, args):
     print("state: ", state)
@@ -14,6 +16,7 @@ class Client:
         self.abi = abi
         self.w3 = w3
         self.timeout = 100
+        self.node_urls = [node.url for node in SYSCONFIGX.nodes] #TODO: if we have time, make this info come from the nodes
 
     def checkTxStatus(self, address, callback, args):
         print("checking the status of the contract at: ", address)
@@ -28,7 +31,8 @@ class Client:
     async def makeRequest(self, transactions, callback=cback_default, args=None):
         if args is None:
             args = []
-        with grpc.insecure_channel("localhost:8888") as channel:
+        url = random.choice(self.node_urls)
+        with grpc.insecure_channel(url) as channel:
             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
             request = _grpc.tpc_pb2.WorkRequest()
             for t in transactions:

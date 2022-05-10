@@ -215,13 +215,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# example contract calls:
-# # read state:
-#     # state = contract_instance.functions.getState().call()
-#     # print(state)
-#     # # 42
-#     #
-#     # contract_instance.functions.request([], 42).transact({'from': eth.default_account})
-#     # state = contract_instance.functions.getState().call()
-#     # print(state)
