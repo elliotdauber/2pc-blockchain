@@ -36,6 +36,8 @@ service Node {
 service XNode {
     rpc SendWork (WorkRequest) returns (WorkResponse) {}
     rpc ReceiveWork (WorkRequest) returns (WorkResponse) {}
+    rpc JoinSys (JoinRequest) returns (JoinRequest) {}
+    rpc LeaveSys (LeaveRequest) returns (LeaveResponse) {}
 }
 
 message SQLTransaction {
@@ -55,4 +57,23 @@ message WorkResponse {
   string address = 1;
   int32 timeout = 2;
   string error = 3;
+}
+
+message Node{
+  int32 id = 1;
+  string url = 2;
+  optional string pk_range_low = 3;
+  optional string pk_range_high = 3;
+}
+
+message JoinRequest{
+  repeated Nodes nodes = 1;
+}
+
+message LeaveRequest{
+  Node node = 1;
+}
+
+message LeaveResponse{
+  bool removed = 1;
 }

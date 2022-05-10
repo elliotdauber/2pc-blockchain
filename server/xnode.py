@@ -8,7 +8,6 @@ from contract import Contract
 from colorama import Style
 import threading
 import sqlite3
-import time
 
 color = ""
 
@@ -119,6 +118,13 @@ class XNode:
         tx_hash = contract.functions.request(num_nodes, self.timeout).transact()
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
 
+    def add_node(self, node):
+        for n in self.node:
+            if n.url == node.url:
+                return "URL"
+            if n.id == node.id:
+                return "ID"
+        
 
 class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
     def __init__(self, xnode):
@@ -160,8 +166,8 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         cprint("deployed at address " + address)
 
         # figuring out where to send the data
-        to_send = {}  # node.url to WorkRequest
-        for node in SYSCONFIGX.nodes:
+        to_send = {} # node.url to WorkRequest
+        for node in self.xnode.nodes:
             node_request = _grpc.tpc_pb2.WorkRequest(address=address, timeout=self.xnode.timeout)
 
             for tx in work:
@@ -194,6 +200,9 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         response = _grpc.tpc_pb2.WorkResponse(address=address, timeout=self.xnode.timeout)
         return response
 
+    def JoinSys(self, request, context):
+        nodes = request.nodes
+        
 
 def run_xnode(config):
     cprint("starting up a node...")
