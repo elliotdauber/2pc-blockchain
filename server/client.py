@@ -1,7 +1,7 @@
 import grpc
 import _grpc.tpc_pb2_grpc
 import _grpc.tpc_pb2
-import threading
+import asyncio
 from contract import Contract
 from w3connection import W3HTTPConnection
 import time
@@ -13,6 +13,7 @@ class Client:
     def __init__(self, abi, w3):
         self.abi = abi
         self.w3 = w3
+        self.timeout = 100
 
     def checkTxStatus(self, address, callback, args):
         print("checking the status of the contract at: ", address)
@@ -21,9 +22,10 @@ class Client:
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
         state = contract.functions.getState().call()
         callback(state, args)
+        return state
 
 
-    def makeRequest(self, transactions, callback=cback_default, args=None):
+    async def makeRequest(self, transactions, callback=cback_default, args=None):
         if args is None:
             args = []
         with grpc.insecure_channel("localhost:8888") as channel:
@@ -36,33 +38,34 @@ class Client:
                 )
                 request.work.append(transaction)
             retval = stub.SendWork(request)
-            thread = threading.Timer(retval.timeout, self.checkTxStatus, [retval.address, callback, args])
-            thread.start()
+            await asyncio.sleep(retval.timeout)
+            self.checkTxStatus(retval.address, callback, args)
+
 
 class BankClient(Client):
-    def CREATE_CUSTOMERS_TABLE(self):
+    async def CREATE_CUSTOMERS_TABLE(self):
         op1 = {
             "pk": "",
             "sql": "CREATE TABLE customers (pk text, balance real);"
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
-    def DEPOSIT(self, account, amount):
+    async def DEPOSIT(self, account, amount):
         op1 = {
             "pk": account,
             "sql": "UPDATE customers SET balance = balance + " + str(amount) + " WHERE pk='" + account + "';"
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
     # for withdraw and transfer -- make a conditional to make sure user has necessary balance
-    def WITHDRAW(self, account, amount):
+    async def WITHDRAW(self, account, amount):
         op1 = {
             "pk": account,
             "sql": "UPDATE customers SET balance = balance - " + str(amount) + " WHERE pk='" + account + "';"
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
-    def TRANSFER(self, from_account, to_account, amount):
+    async def TRANSFER(self, from_account, to_account, amount):
         op1 = {
             "pk": from_account,
             "sql": "UPDATE customers SET balance = balance - " + str(amount) + " WHERE pk='" + from_account + "';"
@@ -71,41 +74,45 @@ class BankClient(Client):
             "pk": to_account,
             "sql": "UPDATE customers SET balance = balance + " + str(amount) + " WHERE pk='" + to_account + "';"
         }
-        self.makeRequest([op1, op2])
+        await self.makeRequest([op1, op2])
 
-    def CHECK_BALANCE(self, account):
+    async def CHECK_BALANCE(self, account):
         op1 = {
             "pk": account,
             "sql": "SELECT balance FROM customers WHERE pk='" + account + "';"
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
-    def CREATE_ACCOUNT(self, account):
+    async def CREATE_ACCOUNT(self, account):
         op1 = {
             "pk": account,
             "sql": "INSERT INTO customers (pk, balance) VALUES ('" + account + "', 0);"
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
-    def DELETE_ACCOUNT(self, account):
+    async def DELETE_ACCOUNT(self, account):
         op1 = {
             "pk": account,
             "sql": "DELETE FROM customers WHERE pk='" + account + "';"
         }
-        self.makeRequest([op1])
+        await self.makeRequest([op1])
 
 def simple_test(c):
-    c.CREATE_CUSTOMERS_TABLE()
-    time.sleep(5)
-    c.CREATE_ACCOUNT("elliot")
-    c.CREATE_ACCOUNT("nick")
-    c.CREATE_ACCOUNT("zach")
-    c.DEPOSIT("elliot", 15)
-    c.TRANSFER("elliot", "zach", 10)
-    c.CHECK_BALANCE("elliot")
-    c.CHECK_BALANCE("nick")
-    c.CHECK_BALANCE("zach")
-    c.DELETE_ACCOUNT("nick")
+    asyncio.run(
+        asyncio.wait(
+            [c.CREATE_CUSTOMERS_TABLE(),
+            time.sleep(5),
+            c.CREATE_ACCOUNT("elliot"),
+            c.CREATE_ACCOUNT("nick"),
+            c.CREATE_ACCOUNT("zach"),
+            c.DEPOSIT("elliot", 15),
+            c.TRANSFER("elliot", "zach", 10),
+            c.CHECK_BALANCE("elliot"),
+            c.CHECK_BALANCE("nick"),
+            c.CHECK_BALANCE("zach"),
+            c.DELETE_ACCOUNT("nick")]
+        )
+    )
 
 def client():
     w3 = W3HTTPConnection()
