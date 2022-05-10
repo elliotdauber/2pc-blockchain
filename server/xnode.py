@@ -55,7 +55,7 @@ class XNode:
         contract = self.working_contracts.get(address)["contract"]
         if contract is None:
             return
-        cprint("VOTING " + str(vote) + " on contract " + address)
+        # cprint("VOTING " + str(vote) + " on contract " + address)
         contract.functions.voter(vote, self.config.id).transact()
 
 
@@ -90,8 +90,10 @@ class XNode:
         if state == "COMMIT":
             self.timeout = max(self.timeout-5, 5)
             self.clear_contract(working_contract, address)
-            self.transact_multiple(working_contract["work"]) # TODO: fix tx issues, then comment this back in, rethink database (local db)
-        elif state == "TIMEOUT":
+            self.transact_multiple(working_contract["work"])
+        elif state == "ABORT":
+            self.clear_contract(working_contract, address)
+        elif state in "TIMEOUT":
             self.timeout = min(2*self.timeout, 5000)
             self.clear_contract(working_contract, address)
             # TODO: You mentioned sending a message to other nodes
@@ -102,12 +104,12 @@ class XNode:
             # on request size
             pass
         
-        print("xnode " + str(self.config.id) + " has a new timeout of " + str(self.timeout))
+        cprint("xnode " + str(self.config.id) + " has a new timeout of " + str(self.timeout))
 
     # clean up after work is executed or aborted
     def clear_contract(self, contract, address):
         for action in contract["work"]:
-            self.working_pk.remove(action.pk)
+            self.working_pk.discard(action.pk)
         self.working_contracts.pop(address)
 
     # COORDINATOR FUNCTIONS
