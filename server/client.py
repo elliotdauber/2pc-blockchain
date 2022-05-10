@@ -12,6 +12,7 @@ class Client:
     def __init__(self, abi, w3):
         self.abi = abi
         self.w3 = w3
+        self.timeout = 100
 
     def checkTxStatus(self, address, callback, args):
         print("checking the status of the contract at: ", address)
@@ -20,6 +21,7 @@ class Client:
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
         state = contract.functions.getState().call()
         callback(state, args)
+        return state
 
 
     def makeRequest(self, transactions, callback=cback_default, args=None):
@@ -39,6 +41,7 @@ class Client:
             retval = stub.SendWork(request)
             thread = threading.Timer(retval.timeout, self.checkTxStatus, [retval.address, callback, args])
             thread.start()
+
 
 class BankClient(Client):
     def DEPOSIT(self, account, amount):

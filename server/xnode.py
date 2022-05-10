@@ -7,6 +7,7 @@ from systemconfig import SYSCONFIGX
 from contract import Contract
 from colorama import Style
 import threading
+import time
 
 
 color = ""
@@ -25,6 +26,7 @@ class XNode:
         self.working_contracts = {}
         self.coordinating_contracts = {}
         self.working_pk = set()
+        self.timeout = 10
 
     # NODE FUNCTIONS
 
@@ -44,7 +46,8 @@ class XNode:
 
     def can_transact(self, work):
         if all([action.pk not in self.working_pk for action in work]):
-            for action in work: self.working_pk.add(action.pk)
+            for action in work: 
+                self.working_pk.add(action.pk)
             return True
         return False
 
@@ -119,20 +122,34 @@ class XNode:
         state = contract.functions.getState().call()
         print("xnode " + str(self.config.id) + " found a " + state)
         if state == "COMMIT":
-            pass
+            self.timeout = max(self.timeout-5, 5)
+            self.clear_contract(working_contract, address)
             # self.transact_multiple(working_contract["work"]) # TODO: fix tx issues, then comment this back in, rethink database (local db)
         elif state == "TIMEOUT":
-            # TODO: backoff timeout?? send msg to all other nodes? how do we do this? (@isaac)
+            self.timeout = min(2*self.timeout, 5000)
+            self.clear_contract(working_contract, address)
+            # TODO: You mentioned sending a message to other nodes
+            # not sure what youre refering to. I think if we let the node
+            # acting as the coordinator set the timeout for any incoming
+            # request we can let nodes adjust to the needs of thier respective
+            # clients. We also should consider adjusting timeout based
+            # on request size
             pass
+        
+        print("xnode " + str(self.config.id) + " has a new timeout of " + str(self.timeout))
+
+    # clean up after work is executed or aborted
+    def clear_contract(self, contract, address):
+        for action in contract["work"]:
+            self.working_pk.remove(action.pk)
+        self.working_contracts.pop(address)
 
     # COORDINATOR FUNCTIONS
 
-    def request(self, address, num_nodes, timeout):
+    def request(self, address, num_nodes):
         contract = self.coordinating_contracts.get(address)["contract"]
-        tx_hash = contract.functions.request(num_nodes, timeout).transact()
+        tx_hash = contract.functions.request(num_nodes, self.timeout).transact()
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
-
-
 
 
 class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
@@ -166,10 +183,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         response = _grpc.tpc_pb2.WorkResponse()
         return response
 
-
-
     def SendWork(self, request, context):
-        timeout = 5  # TODO: SET THIS DYNAMICALLY? (@isaac)
         work = request.work
         if len(work) == 0:
             return _grpc.tpc_pb2.WorkResponse(error="no work given, operation aborted")
@@ -180,7 +194,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         # figuring out where to send the data
         to_send = {} # node.url to WorkRequest
         for node in SYSCONFIGX.nodes:
-            node_request = _grpc.tpc_pb2.WorkRequest(address=address, timeout=timeout)
+            node_request = _grpc.tpc_pb2.WorkRequest(address=address, timeout=self.xnode.timeout)
 
             for tx in work:
                 pk = tx.pk
@@ -200,7 +214,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             "work": work
         }
 
-        self.xnode.request(address, len(to_send), timeout)
+        self.xnode.request(address, len(to_send))
 
         for url, request in to_send.items():
             with grpc.insecure_channel(url) as channel:
@@ -208,7 +222,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                 retval = stub.ReceiveWork(request)
                 cprint(retval)
 
-        response = _grpc.tpc_pb2.WorkResponse(address=address, timeout=timeout)
+        response = _grpc.tpc_pb2.WorkResponse(address=address, timeout=self.xnode.timeout)
         return response
 
 
