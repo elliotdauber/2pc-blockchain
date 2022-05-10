@@ -101,29 +101,24 @@ class BankClient(Client):
         }
         await self.makeRequest([op1])
 
-def simple_test(c):
-    asyncio.run(
-        asyncio.wait(
-            [c.CREATE_CUSTOMERS_TABLE(),
-            time.sleep(5),
-            c.CREATE_ACCOUNT("elliot"),
-            c.CREATE_ACCOUNT("nick"),
-            c.CREATE_ACCOUNT("zach"),
-            c.DEPOSIT("elliot", 15),
-            c.TRANSFER("elliot", "zach", 10),
-            c.CHECK_BALANCE("elliot"),
-            c.CHECK_BALANCE("nick"),
-            c.CHECK_BALANCE("zach"),
-            c.DELETE_ACCOUNT("nick")]
-        )
-    )
+async def simple_test(c):
+    await c.CREATE_CUSTOMERS_TABLE()
+    await c.CREATE_ACCOUNT("elliot")
+    await c.CREATE_ACCOUNT("nick")
+    await c.CREATE_ACCOUNT("zach")
+    await c.DEPOSIT("elliot", 15)
+    await c.TRANSFER("elliot", "zach", 10)
+    await c.CHECK_BALANCE("elliot")
+    await c.CHECK_BALANCE("nick")
+    await c.CHECK_BALANCE("zach")
+    await c.DELETE_ACCOUNT("nick")
 
 def client():
     w3 = W3HTTPConnection()
     contract = Contract("contracts/TPC.sol", w3.w3)
     w3 = W3HTTPConnection()
     c = BankClient(contract.abi, w3.w3)
-    simple_test(c)
+    asyncio.run(simple_test(c))
 
 if __name__ == "__main__":
     client()
