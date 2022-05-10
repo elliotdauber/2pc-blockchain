@@ -47,24 +47,20 @@ def recover(logfile):
                 continue
             elif line[0] == "[":
                 line = line[1:]
-                tx = _grpc.tpc_pb2.Transaction()
+                tx = _grpc.tpc_pb2.SQLTransaction()
             elif line[0] == ",":
                 line = line[2:]
                 txs.append(tx)
-                tx = _grpc.tpc_pb2.Transaction()
+                tx = _grpc.tpc_pb2.SQLTransaction()
 
             #TODO: handle multiple txs for one address (comma separator)
             halves = line.split(":")
             key = halves[0]
             val = halves[1].strip(" \"")
-            if key == "access":
-                tx.access = val
+            if key == "sql":
+                tx.sql = val
             elif key == "pk":
                 tx.pk = val
-            elif key == "column":
-                tx.column = val
-            elif key == "action":
-                tx.action = val
 
 
 recover("log0.txt")

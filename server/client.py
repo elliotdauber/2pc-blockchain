@@ -4,6 +4,7 @@ import _grpc.tpc_pb2
 import threading
 from contract import Contract
 from w3connection import W3HTTPConnection
+import time
 
 def cback_default(state, args):
     print("state: ", state)
@@ -29,11 +30,9 @@ class Client:
             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
             request = _grpc.tpc_pb2.WorkRequest()
             for t in transactions:
-                transaction = _grpc.tpc_pb2.Transaction(
-                    access=t["access"],
-                    pk=t["pk"],
-                    column=t["column"] if "column" in t else None,
-                    action=t["action"] if "action" in t else None
+                transaction = _grpc.tpc_pb2.SQLTransaction(
+                    sql=t["sql"],
+                    pk=t["pk"]
                 )
                 request.work.append(transaction)
             retval = stub.SendWork(request)
@@ -41,65 +40,63 @@ class Client:
             thread.start()
 
 class BankClient(Client):
+    def CREATE_CUSTOMERS_TABLE(self):
+        op1 = {
+            "pk": "",
+            "sql": "CREATE TABLE customers (pk text, balance real);"
+        }
+        self.makeRequest([op1])
+
     def DEPOSIT(self, account, amount):
         op1 = {
-            "access": "write",
             "pk": account,
-            "column": "balance",
-            "action": "+" + str(amount)
+            "sql": "UPDATE customers SET balance = balance + " + str(amount) + " WHERE pk='" + account + "';"
         }
         self.makeRequest([op1])
 
     # for withdraw and transfer -- make a conditional to make sure user has necessary balance
     def WITHDRAW(self, account, amount):
         op1 = {
-            "access": "write",
             "pk": account,
-            "column": "balance",
-            "action": "-" + str(amount)
+            "sql": "UPDATE customers SET balance = balance - " + str(amount) + " WHERE pk='" + account + "';"
         }
         self.makeRequest([op1])
 
     def TRANSFER(self, from_account, to_account, amount):
         op1 = {
-            "access": "write",
             "pk": from_account,
-            "column": "balance",
-            "action": "-" + str(amount)
+            "sql": "UPDATE customers SET balance = balance - " + str(amount) + " WHERE pk='" + from_account + "';"
         }
         op2 = {
-            "access": "write",
             "pk": to_account,
-            "column": "balance",
-            "action": "+" + str(amount)
+            "sql": "UPDATE customers SET balance = balance + " + str(amount) + " WHERE pk='" + to_account + "';"
         }
         self.makeRequest([op1, op2])
 
     def CHECK_BALANCE(self, account):
         op1 = {
-            "access": "read",
             "pk": account,
-            "column": "balance"
+            "sql": "SELECT balance FROM customers WHERE pk='" + account + "';"
         }
         self.makeRequest([op1])
 
     def CREATE_ACCOUNT(self, account):
         op1 = {
-            "access": "write",
             "pk": account,
-            "action": "&"
+            "sql": "INSERT INTO customers (pk, balance) VALUES ('" + account + "', 0);"
         }
         self.makeRequest([op1])
 
     def DELETE_ACCOUNT(self, account):
         op1 = {
-            "access": "write",
             "pk": account,
-            "action": "~"
+            "sql": "DELETE FROM customers WHERE pk='" + account + "';"
         }
         self.makeRequest([op1])
 
 def simple_test(c):
+    c.CREATE_CUSTOMERS_TABLE()
+    time.sleep(5)
     c.CREATE_ACCOUNT("elliot")
     c.CREATE_ACCOUNT("nick")
     c.CREATE_ACCOUNT("zach")

@@ -14,19 +14,19 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ttpc.proto\x12\x03tpc\"I\n\x0bTransaction\x12\x0e\n\x06\x61\x63\x63\x65ss\x18\x01 \x01(\t\x12\n\n\x02pk\x18\x02 \x01(\t\x12\x0e\n\x06\x63olumn\x18\x03 \x01(\t\x12\x0e\n\x06\x61\x63tion\x18\x04 \x01(\t\"O\n\x0bWorkRequest\x12\x1e\n\x04work\x18\x01 \x03(\x0b\x32\x10.tpc.Transaction\x12\x0f\n\x07\x61\x64\x64ress\x18\x02 \x01(\t\x12\x0f\n\x07timeout\x18\x03 \x01(\x05\"?\n\x0cWorkResponse\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x0f\n\x07timeout\x18\x02 \x01(\x05\x12\r\n\x05\x65rror\x18\x03 \x01(\t2@\n\x0b\x43oordinator\x12\x31\n\x08SendWork\x12\x10.tpc.WorkRequest\x1a\x11.tpc.WorkResponse\"\x00\x32<\n\x04Node\x12\x34\n\x0bReceiveWork\x12\x10.tpc.WorkRequest\x1a\x11.tpc.WorkResponse\"\x00\x32p\n\x05XNode\x12\x31\n\x08SendWork\x12\x10.tpc.WorkRequest\x1a\x11.tpc.WorkResponse\"\x00\x12\x34\n\x0bReceiveWork\x12\x10.tpc.WorkRequest\x1a\x11.tpc.WorkResponse\"\x00\x42(\n\x14io.grpc.examples.tpcB\x08TPCProtoP\x01\xa2\x02\x03TPCb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ttpc.proto\x12\x03tpc\")\n\x0eSQLTransaction\x12\n\n\x02pk\x18\x01 \x01(\t\x12\x0b\n\x03sql\x18\x02 \x01(\t\"R\n\x0bWorkRequest\x12!\n\x04work\x18\x01 \x03(\x0b\x32\x13.tpc.SQLTransaction\x12\x0f\n\x07\x61\x64\x64ress\x18\x02 \x01(\t\x12\x0f\n\x07timeout\x18\x03 \x01(\x05\"?\n\x0cWorkResponse\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x01(\t\x12\x0f\n\x07timeout\x18\x02 \x01(\x05\x12\r\n\x05\x65rror\x18\x03 \x01(\t2@\n\x0b\x43oordinator\x12\x31\n\x08SendWork\x12\x10.tpc.WorkRequest\x1a\x11.tpc.WorkResponse\"\x00\x32<\n\x04Node\x12\x34\n\x0bReceiveWork\x12\x10.tpc.WorkRequest\x1a\x11.tpc.WorkResponse\"\x00\x32p\n\x05XNode\x12\x31\n\x08SendWork\x12\x10.tpc.WorkRequest\x1a\x11.tpc.WorkResponse\"\x00\x12\x34\n\x0bReceiveWork\x12\x10.tpc.WorkRequest\x1a\x11.tpc.WorkResponse\"\x00\x42(\n\x14io.grpc.examples.tpcB\x08TPCProtoP\x01\xa2\x02\x03TPCb\x06proto3')
 
 
 
-_TRANSACTION = DESCRIPTOR.message_types_by_name['Transaction']
+_SQLTRANSACTION = DESCRIPTOR.message_types_by_name['SQLTransaction']
 _WORKREQUEST = DESCRIPTOR.message_types_by_name['WorkRequest']
 _WORKRESPONSE = DESCRIPTOR.message_types_by_name['WorkResponse']
-Transaction = _reflection.GeneratedProtocolMessageType('Transaction', (_message.Message,), {
-  'DESCRIPTOR' : _TRANSACTION,
+SQLTransaction = _reflection.GeneratedProtocolMessageType('SQLTransaction', (_message.Message,), {
+  'DESCRIPTOR' : _SQLTRANSACTION,
   '__module__' : 'tpc_pb2'
-  # @@protoc_insertion_point(class_scope:tpc.Transaction)
+  # @@protoc_insertion_point(class_scope:tpc.SQLTransaction)
   })
-_sym_db.RegisterMessage(Transaction)
+_sym_db.RegisterMessage(SQLTransaction)
 
 WorkRequest = _reflection.GeneratedProtocolMessageType('WorkRequest', (_message.Message,), {
   'DESCRIPTOR' : _WORKREQUEST,
@@ -49,16 +49,16 @@ if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
   DESCRIPTOR._serialized_options = b'\n\024io.grpc.examples.tpcB\010TPCProtoP\001\242\002\003TPC'
-  _TRANSACTION._serialized_start=18
-  _TRANSACTION._serialized_end=91
-  _WORKREQUEST._serialized_start=93
-  _WORKREQUEST._serialized_end=172
-  _WORKRESPONSE._serialized_start=174
-  _WORKRESPONSE._serialized_end=237
-  _COORDINATOR._serialized_start=239
-  _COORDINATOR._serialized_end=303
-  _NODE._serialized_start=305
-  _NODE._serialized_end=365
-  _XNODE._serialized_start=367
-  _XNODE._serialized_end=479
+  _SQLTRANSACTION._serialized_start=18
+  _SQLTRANSACTION._serialized_end=59
+  _WORKREQUEST._serialized_start=61
+  _WORKREQUEST._serialized_end=143
+  _WORKRESPONSE._serialized_start=145
+  _WORKRESPONSE._serialized_end=208
+  _COORDINATOR._serialized_start=210
+  _COORDINATOR._serialized_end=274
+  _NODE._serialized_start=276
+  _NODE._serialized_end=336
+  _XNODE._serialized_start=338
+  _XNODE._serialized_end=450
 # @@protoc_insertion_point(module_scope)

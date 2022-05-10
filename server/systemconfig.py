@@ -1,4 +1,3 @@
-from dynamo import tables
 from colorama import Fore
 
 
@@ -8,13 +7,13 @@ class CoordinatorConfig:
 
 
 class NodeConfig:
-    def __init__(self, id, url, table, pk_range, color, logfile):
+    def __init__(self, id, url, pk_range, color):
         self.id = id
         self.url = url
-        self.table = table
         self.pk_range = pk_range
         self.color = color
-        self.logfile = logfile
+        self.logfile = "log" + str(id) + ".txt"
+        self.dbfile = "db" + str(id) + ".db"
 
 
 class SystemConfig:
@@ -24,8 +23,8 @@ class SystemConfig:
 
 
 _NODES = [
-    NodeConfig(id=0, url="localhost:8889", table=tables[0], pk_range=["a", "n"], color=Fore.RED, logfile="log0.txt"),
-    NodeConfig(id=1, url="localhost:8887", table=tables[1], pk_range=["o", "z"], color=Fore.GREEN, logfile="log1.txt")
+    NodeConfig(id=0, url="localhost:8889", pk_range=["a", "n"], color=Fore.RED),
+    NodeConfig(id=1, url="localhost:8887", pk_range=["o", "z"], color=Fore.GREEN)
 ]
 
 _COORD = CoordinatorConfig("localhost:8888")
@@ -41,9 +40,9 @@ class SystemConfigX:
 
 
 _NODESX = [
-    NodeConfig(id=0, url="localhost:8887", table=tables[0], pk_range=["a", "h"], color=Fore.RED, logfile="log0.txt"),
-    NodeConfig(id=1, url="localhost:8888", table=tables[1], pk_range=["i", "o"], color=Fore.GREEN, logfile="log1.txt"),
-    NodeConfig(id=2, url="localhost:8889", table=tables[2], pk_range=["p", "z"], color=Fore.BLUE, logfile="log2.txt")
+    NodeConfig(id=0, url="localhost:8887", pk_range=["a", "h"], color=Fore.RED),
+    NodeConfig(id=1, url="localhost:8888", pk_range=["i", "o"], color=Fore.GREEN),
+    NodeConfig(id=2, url="localhost:8889", pk_range=["p", "z"], color=Fore.BLUE)
 ]
 
 

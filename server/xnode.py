@@ -7,6 +7,7 @@ from systemconfig import SYSCONFIGX
 from contract import Contract
 from colorama import Style
 import threading
+import sqlite3
 
 color = ""
 
@@ -49,54 +50,26 @@ class XNode:
         if contract is None:
             return
         cprint("VOTING " + str(vote) + " on contract " + address)
-        tx_hash = contract.functions.voter(vote, self.config.id).transact()
-        # self.w3.eth.wait_for_transaction_receipt(tx_hash) #TODO: maybe don't wait?
+        contract.functions.voter(vote, self.config.id).transact()
 
 
     def verdict(self, address, vote):
         contract = self.working_contracts.get(address)["contract"]
         if contract is None:
             return
-        tx_hash = contract.functions.verdict.transact()
-        # self.w3.eth.wait_for_transaction_receipt(tx_hash) #TODO: maybe dont wait?
+        contract.functions.verdict.transact()
 
-    #logic: https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html
-    def transact(self, tx):
-        table = self.config.table
-        action = tx.action[0] if tx.action != "" else ""
-        if tx.access == "read":
-            response = table.get_item(
-                Key={
-                    "pk": tx.pk
-                }
-            )
-            if tx.column == "":
-                return response['Item']
-            return response['Item'][tx.column] if tx.column in response['Item'] else None
-        elif tx.access == "write":
-            if action == "&":
-                response = table.put_item(
-                    Key={
-                        "pk": tx.pk,
-                        "balance": 0
-                    }
-                )
-            elif action == "~":
-                response = table.delete_item(
-                    Key={
-                        "pk": tx.pk
-                    }
-                )
-            elif action == '+':
-                # TODO: add operation (make sure column is int first)
-                pass
-            elif action == '-':
-                # TODO: subtract operation (make sure column is int first)
-                pass
+
+    def transact(self, tx, cursor):
+        cursor.execute(tx.sql)
 
     def transact_multiple(self, work):
+        db = sqlite3.connect(self.config.dbfile)
+        cursor = db.cursor()
         for tx in work:
-            self.transact(tx) # TODO: fix tx issues, then comment this back in, rethink database (local db)
+            self.transact(tx, cursor)
+        db.commit()
+        db.close()
 
 
     def checkTxStatus(self, address):
@@ -107,10 +80,9 @@ class XNode:
         tx_hash = contract.functions.verdict().transact()
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
         state = contract.functions.getState().call()
-        print("xnode " + str(self.config.id) + " found a " + state)
+        cprint("xnode " + str(self.config.id) + " found a " + state)
         if state == "COMMIT":
-            pass
-            # self.transact_multiple(working_contract["work"]) # TODO: fix tx issues, then comment this back in, rethink database (local db)
+            self.transact_multiple(working_contract["work"]) # TODO: make this a separate thread?
         elif state == "TIMEOUT":
             # TODO: backoff timeout?? send msg to all other nodes? how do we do this? (@isaac)
             pass
@@ -168,13 +140,14 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         cprint("deployed at address " + address)
 
         # figuring out where to send the data
-        to_send = {} # node.url to WorkRequest
+        to_send = {}  # node.url to WorkRequest
         for node in SYSCONFIGX.nodes:
             node_request = _grpc.tpc_pb2.WorkRequest(address=address, timeout=timeout)
 
             for tx in work:
                 pk = tx.pk
                 if pk == "":
+                    node_request.work.append(tx)  # forward no-pk requests to all servers
                     continue
                 first = pk[0].lower()
                 if node.pk_range[0] <= first <= node.pk_range[1]:
