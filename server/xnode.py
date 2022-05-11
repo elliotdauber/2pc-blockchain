@@ -8,6 +8,7 @@ from contract import Contract
 from colorama import Style
 import threading
 import sqlite3
+import time
 
 color = ""
 
@@ -55,7 +56,9 @@ class XNode:
         if contract is None:
             return
         # cprint("VOTING " + str(vote) + " on contract " + address)
-        contract.functions.voter(vote, self.config.id).transact()
+        tx_hash = contract.functions.voter(vote, self.config.id).transact()
+        self.w3.eth.wait_for_transaction_receipt(tx_hash)
+        # return contract.functions.getState().call()
 
 
     def verdict(self, address, vote):
@@ -111,6 +114,28 @@ class XNode:
             self.working_pk.discard(action.pk)
         self.working_contracts.pop(address)
 
+    def wait_for_result(self, address, clienturl):
+        working_contract = self.working_contracts.get(address, None)
+        if working_contract is None:
+            return "ERROR"
+        contract = working_contract["contract"]
+        while True:
+            status = contract.functions.getState().call()
+            if status in ["COMMIT", "ABORT", "TIMEOUT"]:
+                self.clear_contract(working_contract, address) 
+                if status == "COMMIT":
+                    self.timeout = max(self.timeout-5, 5)
+                    self.transact_multiple(working_contract["work"]) 
+                elif status == "TIMEOUT":
+                    self.timeout = min(2*self.timeout, 5000)
+                if status in ["COMMIT", "ABORT"]:
+                    with grpc.insecure_channel(clienturl) as channel:
+                        stub = _grpc.tpc_pb2_grpc.ClientStub(channel)
+                        outcome_request = _grpc.tpc_pb2.WorkOutcome(address=address, outcome=status) #TODO: data? only for reads
+                        stub.ReceiveOutcome(outcome_request)
+                return
+            time.sleep(0.25)
+
     # COORDINATOR FUNCTIONS
 
     def request(self, address, num_nodes):
@@ -119,7 +144,7 @@ class XNode:
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
 
     def add_node(self, node):
-        for n in self.node:
+        for n in self.nodes:
             if n.url == node.url:
                 return "URL"
             if n.id == node.id:
@@ -142,16 +167,13 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             cprint(tx)
 
         contract = self.xnode.w3.eth.contract(address=address, abi=self.xnode.contract.abi)
-        self.xnode.working_contracts[address] = {
+        working_contract = {
             "contract": contract,
             "work": work
         }
-        if self.xnode.can_transact(work):
-            self.xnode.voter(address, 1)
-        else:
-            self.xnode.voter(address, 0)
-
-        thread = threading.Timer(timeout, self.xnode.checkTxStatus, [address])
+        self.xnode.working_contracts[address] = working_contract
+        self.xnode.voter(address, 1 if self.xnode.can_transact(work) else 0)
+        thread = threading.Thread(None, self.xnode.wait_for_result, None, [address, request.clienturl])
         thread.start()
 
         response = _grpc.tpc_pb2.WorkResponse()
@@ -168,7 +190,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         # figuring out where to send the data
         to_send = {} # node.url to WorkRequest
         for node in self.xnode.nodes:
-            node_request = _grpc.tpc_pb2.WorkRequest(address=address, timeout=self.xnode.timeout)
+            node_request = _grpc.tpc_pb2.WorkRequest(address=address, timeout=self.xnode.timeout, clienturl=request.clienturl)
 
             for tx in work:
                 pk = tx.pk
@@ -187,17 +209,21 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         self.xnode.coordinating_contracts[address] = {
             "contract": contract,
             "work": work
-        }
+        }   
 
         self.xnode.request(address, len(to_send))
 
-        for url, request in to_send.items():
+        #TODO: sloppy as hell
+        def send_ReceiveWork(url, request):
             with grpc.insecure_channel(url) as channel:
                 stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
-                retval = stub.ReceiveWork(request)
-                cprint(retval)
+                stub.ReceiveWork(request)
 
-        response = _grpc.tpc_pb2.WorkResponse(address=address, timeout=self.xnode.timeout)
+        for url, request in to_send.items():
+            thread = threading.Thread(None, send_ReceiveWork, None, [url, request])
+            thread.start()
+
+        response = _grpc.tpc_pb2.WorkResponse(address=address, timeout=self.xnode.timeout, threshold=len(to_send))
         return response
 
     def JoinSys(self, request, context):
