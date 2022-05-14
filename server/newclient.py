@@ -37,10 +37,14 @@ class Client:
         self.grpc_server.stop(0)
 
     def transform_data(self, data):
-        item_strs = data.split(";;")
+        item_strs = data.split(';;')
         items = []
         for item in item_strs:
-            items.append(item.strip("()").split(",")[:-1])
+            columns = item.strip("()").split(",")
+            if len(columns) == 1:
+                continue
+            result = columns[:-1] if columns[-1] == "" else columns
+            items.append(result)
         return items
    
     def checkTxStatus(self, address):
@@ -135,7 +139,7 @@ class BankClient(Client):
     async def CHECK_BALANCE(self, account, blk=True):
         op1 = {
             "pk": account,
-            "sql": "SELECT balance FROM customers WHERE pk='" + account + "';"
+            "sql": "SELECT pk, balance FROM customers WHERE pk='" + account + "';"
         }
         return await self.makeRequest([op1], blk=blk, access="r")
 
@@ -144,7 +148,7 @@ class BankClient(Client):
         for account in accounts:
             op = {
                 "pk": account,
-                "sql": "SELECT balance FROM customers WHERE pk='" + account + "';"
+                "sql": "SELECT pk, balance FROM customers WHERE pk='" + account + "';"
             }
             ops.append(op)
         return await self.makeRequest(ops, blk=blk, access="r")
