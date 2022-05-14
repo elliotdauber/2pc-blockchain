@@ -40,6 +40,7 @@ message WorkRequest {
   string address = 2;
   int32 timeout = 3;
   string clienturl = 4;
+  string access = 5;
 }
 
 // The response message containing the greetings

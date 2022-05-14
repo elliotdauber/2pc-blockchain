@@ -8,6 +8,7 @@ from systemconfig import SYSCONFIGX
 from txstatusmap import TransactionStatusMap
 import time
 import random
+import hashlib
 
 from concurrent import futures
 
@@ -34,15 +35,25 @@ class Client:
 
     def stop_grpc(self):
         self.grpc_server.stop(0)
+
+    def transform_data(self, data):
+        item_strs = data.split(";;")
+        items = []
+        for item in item_strs:
+            items.append(item.strip("()").split(",")[:-1])
+        return items
    
-    def checkTxStatus(self, address, callback, args):
+    def checkTxStatus(self, address):
         print("checking the status of the contract at: ", address)
         contract = self.w3.eth.contract(address=address, abi=self.abi)
         tx_hash = contract.functions.verdict().transact()
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
         state = contract.functions.getState().call()
-        callback(state, args)
-        return state
+        data = contract.functions.getData().call()
+        return {
+            "state": state,
+            "data": data
+        }
 
     def waitForResponse(self, address, timeout):
         total_time = 0
@@ -53,27 +64,29 @@ class Client:
                 return None
         return self.outstanding_txs.outcome(address)
 
-    async def makeRequest(self, transactions, callback=cback_default, args=None, blk=True):
-        if args is None:
-            args = []
+    async def makeRequest(self, transactions, access="w", blk=True):
         url = random.choice(self.node_urls)
         with grpc.insecure_channel(url) as channel:
             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
-            request = _grpc.tpc_pb2.WorkRequest(clienturl=self.url)
+            request = _grpc.tpc_pb2.WorkRequest(clienturl=self.url, access=access)
             for t in transactions:
+                pk = t["pk"].encode()
+                pk_hash = hashlib.sha256(pk).hexdigest()
                 transaction = _grpc.tpc_pb2.SQLTransaction(
                     sql=t["sql"],
-                    pk=t["pk"]
+                    pk=pk_hash
                 )
                 request.work.append(transaction)
             retval = stub.SendWork(request)
             if blk:
                 self.outstanding_txs.add_request(retval.address, retval.threshold)
                 outcome = self.waitForResponse(retval.address, retval.timeout)
+                data = self.outstanding_txs.data(retval.address)
                 if outcome is None: # timeout
-                    self.checkTxStatus(retval.address, callback, args)
-                else:
-                    callback(outcome, args)
+                    result = self.checkTxStatus(retval.address) #TODO
+                    outcome = result["status"]
+                    data = result["data"]
+                return self.transform_data(data) if outcome == "COMMIT" else outcome
 
 class ClientGRPC(_grpc.tpc_pb2_grpc.ClientServicer):
     def __init__(self, client):
@@ -81,9 +94,8 @@ class ClientGRPC(_grpc.tpc_pb2_grpc.ClientServicer):
         self.client = client
 
     def ReceiveOutcome(self, request, context):
-        self.client.outstanding_txs.add_response(request.address, request.outcome)
-        #TODO: data? what to do for writes?
-        return _grpc.tpc_pb2.Empty() #TODO: data? only for reads
+        self.client.outstanding_txs.add_response(request.address, request.outcome, request.data)
+        return _grpc.tpc_pb2.Empty()
 
 
 class BankClient(Client):
@@ -125,7 +137,17 @@ class BankClient(Client):
             "pk": account,
             "sql": "SELECT balance FROM customers WHERE pk='" + account + "';"
         }
-        await self.makeRequest([op1], blk=blk)
+        return await self.makeRequest([op1], blk=blk, access="r")
+
+    async def CHECK_BALANCES(self, accounts, blk=True):
+        ops = []
+        for account in accounts:
+            op = {
+                "pk": account,
+                "sql": "SELECT balance FROM customers WHERE pk='" + account + "';"
+            }
+            ops.append(op)
+        return await self.makeRequest(ops, blk=blk, access="r")
 
     async def CREATE_ACCOUNT(self, account, blk=True):
         op1 = {
@@ -148,9 +170,10 @@ async def simple_test(c):
     await c.CREATE_ACCOUNT("zach")
     await c.DEPOSIT("elliot", 15)
     await c.TRANSFER("elliot", "zach", 10)
-    await c.CHECK_BALANCE("elliot", False)
-    await c.CHECK_BALANCE("nick", False)
-    await c.CHECK_BALANCE("zach", False)
+    print(await c.CHECK_BALANCE("elliot"))
+    print(await c.CHECK_BALANCE("nick"))
+    print(await c.CHECK_BALANCE("zach"))
+    print(await c.CHECK_BALANCES(["elliot", "nick", "zach"]))
     #await c.DELETE_ACCOUNT("nick")
 
 def client():
@@ -175,7 +198,3 @@ def client():
 
 if __name__ == "__main__":
     client()
-
-
-    #function(address): run loop that queries the outstanding_txs object and sees if the address has a response
-    #checks the whole map first, then runs the loop

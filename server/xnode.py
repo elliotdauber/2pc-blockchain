@@ -9,6 +9,7 @@ from colorama import Style
 import threading
 import sqlite3
 import time
+import hashlib
 
 color = ""
 
@@ -69,15 +70,20 @@ class XNode:
 
 
     def transact(self, tx, cursor):
-        cursor.execute(tx.sql)
+        data = []
+        for item in cursor.execute(tx.sql):
+            data.append(str(item))
+        return ";;".join(data)
 
-    def transact_multiple(self, work):
+    def transact_multiple(self, work, access):
         db = sqlite3.connect(self.config.dbfile)
         cursor = db.cursor()
+        data = []
         for tx in work:
-            self.transact(tx, cursor)
+            data.append(self.transact(tx, cursor))
         db.commit()
         db.close()
+        return ";;".join(data)
 
 
     def checkTxStatus(self, address):
@@ -114,7 +120,7 @@ class XNode:
             self.working_pk.discard(action.pk)
         self.working_contracts.pop(address)
 
-    def wait_for_result(self, address, clienturl):
+    def wait_for_result(self, address, clienturl, access):
         working_contract = self.working_contracts.get(address, None)
         if working_contract is None:
             return "ERROR"
@@ -123,18 +129,26 @@ class XNode:
             status = contract.functions.getState().call()
             if status in ["COMMIT", "ABORT", "TIMEOUT"]:
                 self.clear_contract(working_contract, address) 
+                data = ""
                 if status == "COMMIT":
                     self.timeout = max(self.timeout-5, 5)
-                    self.transact_multiple(working_contract["work"]) 
+                    data = self.transact_multiple(working_contract["work"], access) 
                 elif status == "TIMEOUT":
                     self.timeout = min(2*self.timeout, 5000)
+
                 if status in ["COMMIT", "ABORT"]:
                     with grpc.insecure_channel(clienturl) as channel:
                         stub = _grpc.tpc_pb2_grpc.ClientStub(channel)
                         outcome_request = _grpc.tpc_pb2.WorkOutcome(address=address, outcome=status) #TODO: data? only for reads
+                        print("ACCESS: ", access)
+                        if access == "r":
+                            tx_hash = contract.functions.set_data(data).transact()
+                            self.w3.eth.wait_for_transaction_receipt(tx_hash)
+                            outcome_request.data = data
                         stub.ReceiveOutcome(outcome_request)
                 return
             time.sleep(0.25)
+            
 
     # COORDINATOR FUNCTIONS
 
@@ -173,11 +187,10 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         }
         self.xnode.working_contracts[address] = working_contract
         self.xnode.voter(address, 1 if self.xnode.can_transact(work) else 0)
-        thread = threading.Thread(None, self.xnode.wait_for_result, None, [address, request.clienturl])
+        thread = threading.Thread(None, self.xnode.wait_for_result, None, [address, request.clienturl, request.access])
         thread.start()
 
-        response = _grpc.tpc_pb2.WorkResponse()
-        return response
+        return _grpc.tpc_pb2.WorkResponse()
 
     def SendWork(self, request, context):
         work = request.work
@@ -189,17 +202,21 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
 
         # figuring out where to send the data
         to_send = {} # node.url to WorkRequest
+        empty_string_hash = int(hashlib.sha256(b"").hexdigest(), 16)
         for node in self.xnode.nodes:
-            node_request = _grpc.tpc_pb2.WorkRequest(address=address, timeout=self.xnode.timeout, clienturl=request.clienturl)
+            node_request = _grpc.tpc_pb2.WorkRequest(address=address, timeout=self.xnode.timeout, clienturl=request.clienturl, access=request.access)
 
             for tx in work:
-                pk = tx.pk
-                if pk == "":
+                pk = int(tx.pk, 16)
+                if pk == empty_string_hash:
                     node_request.work.append(tx)  # forward no-pk requests to all servers
                     continue
-                first = pk[0].lower()
-                if node.pk_range[0] <= first <= node.pk_range[1]:
+                if node.pk_range[0] <= pk <= node.pk_range[1]:
                     node_request.work.append(tx)
+                # first = pk[0].lower()
+                # if node.pk_range[0] <= first <= node.pk_range[1]:
+                #     node_request.work.append(tx)
+                
 
             if len(node_request.work) > 0:
                 to_send[node.url] = node_request
