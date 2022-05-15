@@ -70,71 +70,6 @@ class Coordinator(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
 
-class NodeStub(object):
-    """The node service definition
-    """
-
-    def __init__(self, channel):
-        """Constructor.
-
-        Args:
-            channel: A grpc.Channel.
-        """
-        self.ReceiveWork = channel.unary_unary(
-                '/tpc.Node/ReceiveWork',
-                request_serializer=tpc__pb2.WorkRequest.SerializeToString,
-                response_deserializer=tpc__pb2.WorkResponse.FromString,
-                )
-
-
-class NodeServicer(object):
-    """The node service definition
-    """
-
-    def ReceiveWork(self, request, context):
-        """Receives work in the node
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-
-def add_NodeServicer_to_server(servicer, server):
-    rpc_method_handlers = {
-            'ReceiveWork': grpc.unary_unary_rpc_method_handler(
-                    servicer.ReceiveWork,
-                    request_deserializer=tpc__pb2.WorkRequest.FromString,
-                    response_serializer=tpc__pb2.WorkResponse.SerializeToString,
-            ),
-    }
-    generic_handler = grpc.method_handlers_generic_handler(
-            'tpc.Node', rpc_method_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
-
-
- # This class is part of an EXPERIMENTAL API.
-class Node(object):
-    """The node service definition
-    """
-
-    @staticmethod
-    def ReceiveWork(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/tpc.Node/ReceiveWork',
-            tpc__pb2.WorkRequest.SerializeToString,
-            tpc__pb2.WorkResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-
 class XNodeStub(object):
     """Missing associated documentation comment in .proto file."""
 
@@ -154,6 +89,16 @@ class XNodeStub(object):
                 request_serializer=tpc__pb2.WorkRequest.SerializeToString,
                 response_deserializer=tpc__pb2.WorkResponse.FromString,
                 )
+        self.AddNode = channel.unary_unary(
+                '/tpc.XNode/AddNode',
+                request_serializer=tpc__pb2.JoinRequest.SerializeToString,
+                response_deserializer=tpc__pb2.JoinResponse.FromString,
+                )
+        self.MoveData = channel.unary_unary(
+                '/tpc.XNode/MoveData',
+                request_serializer=tpc__pb2.MoveRequest.SerializeToString,
+                response_deserializer=tpc__pb2.MoveResponse.FromString,
+                )
 
 
 class XNodeServicer(object):
@@ -171,6 +116,18 @@ class XNodeServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def AddNode(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MoveData(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_XNodeServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -183,6 +140,16 @@ def add_XNodeServicer_to_server(servicer, server):
                     servicer.ReceiveWork,
                     request_deserializer=tpc__pb2.WorkRequest.FromString,
                     response_serializer=tpc__pb2.WorkResponse.SerializeToString,
+            ),
+            'AddNode': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddNode,
+                    request_deserializer=tpc__pb2.JoinRequest.FromString,
+                    response_serializer=tpc__pb2.JoinResponse.SerializeToString,
+            ),
+            'MoveData': grpc.unary_unary_rpc_method_handler(
+                    servicer.MoveData,
+                    request_deserializer=tpc__pb2.MoveRequest.FromString,
+                    response_serializer=tpc__pb2.MoveResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -225,5 +192,39 @@ class XNode(object):
         return grpc.experimental.unary_unary(request, target, '/tpc.XNode/ReceiveWork',
             tpc__pb2.WorkRequest.SerializeToString,
             tpc__pb2.WorkResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def AddNode(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/tpc.XNode/AddNode',
+            tpc__pb2.JoinRequest.SerializeToString,
+            tpc__pb2.JoinResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def MoveData(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/tpc.XNode/MoveData',
+            tpc__pb2.MoveRequest.SerializeToString,
+            tpc__pb2.MoveResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

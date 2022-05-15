@@ -27,17 +27,11 @@ service Coordinator {
   rpc SendWork (WorkRequest) returns (WorkResponse) {}
 }
 
-//The node service definition
-service Node {
-  // Receives work in the node
-  rpc ReceiveWork (WorkRequest) returns (WorkResponse) {}
-}
-
 service XNode {
     rpc SendWork (WorkRequest) returns (WorkResponse) {}
     rpc ReceiveWork (WorkRequest) returns (WorkResponse) {}
-    rpc JoinSys (JoinRequest) returns (JoinRequest) {}
-    rpc LeaveSys (LeaveRequest) returns (LeaveResponse) {}
+    rpc AddNode (JoinRequest) returns (JoinResponse) {}
+    rpc MoveData (MoveRequest) returns (MoveResponse) {}
 }
 
 message SQLTransaction {
@@ -62,18 +56,32 @@ message WorkResponse {
 message Node{
   int32 id = 1;
   string url = 2;
-  optional string pk_range_low = 3;
-  optional string pk_range_high = 3;
+  string color = 3;
+  string log = 4;
+  string db = 5;
 }
 
 message JoinRequest{
-  repeated Nodes nodes = 1;
-}
-
-message LeaveRequest{
   Node node = 1;
+  repeated string keys = 2;
+  optional int32 idx = 3;
 }
 
-message LeaveResponse{
-  bool removed = 1;
+message url_list{
+  repeated string url = 1;
+}
+
+message JoinResponse{
+  repeated SQLTransaction work = 1;
+  bool success = 2;
+  optional Node config = 3;
+  map<int32, url_list> directory = 4;
+}
+
+message MoveRequest{
+  repeated SQLTransaction work = 1;
+}
+
+message MoveResponse{
+  bool complete= 1;
 }
