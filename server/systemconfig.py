@@ -35,11 +35,17 @@ SYSCONFIG = SystemConfig(_NODES, _COORD)
 
 
 class Directory:
-    def __init__(self, nodes=[]):
+    def __init__(self, nodes=[], pre_dir={}):
         self.dir = {}
-        self.urls = []
+        self.urls = set()
+        if len(pre_dir.keys()) > 0:
+            for key, value in pre_dir.items():
+                self.dir[key] = value
+                for val in value:
+                    self.urls.add(val)
         for node in nodes:
             self.addNode(node, 3)
+            
 
     def addNode(self, node, num_vnodes, new_keys=[]):
         if len(new_keys) == 0:
@@ -69,7 +75,7 @@ class Directory:
                 self.dir[key].append(url)
             else:
                 self.dir[key] = [url]
-        self.urls.append(url)
+        self.urls.add(url)
         return
 
     def search(self, key):

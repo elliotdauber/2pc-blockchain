@@ -3,7 +3,7 @@ from w3connection import W3HTTPConnection
 import grpc
 import _grpc.tpc_pb2_grpc
 from concurrent import futures
-from systemconfig import SYSCONFIGX, NodeConfig
+from systemconfig import SYSCONFIGX, NodeConfig, Directory
 from contract import Contract
 from colorama import Style, Fore
 import threading
@@ -18,7 +18,7 @@ def cprint(msg):
 
 
 class XNode:
-    def __init__(self, w3, config, directory, contract_file, url=None):
+    def __init__(self, w3, config, directory, contract_file):
         self.contract = Contract(contract_file, w3)
         self.nodes = SYSCONFIGX.nodes
         self.directory = directory
@@ -29,13 +29,11 @@ class XNode:
         self.coordinating_contracts = {}
         self.working_pk = set()
         self.timeout = 10
-        if url != None:
-            self.join_system(url)
         cprint(self.config.url)
 
     # NODE FUNCTIONS
 
-    def serve(self):
+    def serve(self, url=None):
         # Initialize the server
         cprint("STARTING XNODE SERVER " + str(self.config.id) + " @ " + self.config.url)
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -43,6 +41,8 @@ class XNode:
             XNodeGRPC(self), server)
         server.add_insecure_port(self.config.url)
         server.start()
+        if url != None:
+            self.join_system(url)
         server.wait_for_termination()
 
     def log(self, text):
@@ -129,19 +129,21 @@ class XNode:
         print("Requesting to join through node:", url)
         id = self.config.id
         myurl = self.config.url
+        global color
         with grpc.insecure_channel(url) as channel:
             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
             node_message = _grpc.tpc_pb2.Node(id=id, url=myurl)
             request = _grpc.tpc_pb2.JoinRequest(node=node_message, keys=[])
             retval = stub.AddNode(request)
-            if retval.sucess:
+            if retval.success:
                 print("Added!")
-                self.config = retval.node
-                self.directory = retval.directory
-                global color
+                self.config = retval.config
+                self.directory = Directory(pre_dir=dict(retval.directory))
                 color = self.config.color
+                cprint(str(self.directory.dir))
                 return True
             else:
+                print("FAILED TO JOIN")
                 return False
 
 class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
@@ -237,6 +239,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
 
             new_node = NodeConfig(id, new_url, node_color, ["a", "z"]) # Need to remove the relevance of pk ranges
             node_message = _grpc.tpc_pb2.Node(id=id, url=new_url, color=node_color, log=logfile, db=dbfile)
+            curr_key = 0
 
             if self.xnode.valid_new_node(id, new_url):
                 # Update my local directory 
@@ -250,7 +253,8 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                     else:
                         i = 0
                     if node_url == self.xnode.config.url:
-                            work.append(recover(self.xnode.config.logfile, new_node_keys[i]))
+                        curr_key = new_node_keys[i]
+                        work = recover(self.xnode.config.logfile, curr_key)
                     else:
                         with grpc.insecure_channel(node_url) as channel:
                             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
@@ -274,7 +278,10 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             cprint("Sending work to node")
             with grpc.insecure_channel(new_url) as channel:
                 stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
-                request = _grpc.tpc_pb2.MoveRequest(work=work)
+                transactions = []
+                for action in work: 
+                    transactions.append(_grpc.tpc_pb2.SQLTransaction(pk=curr_key, sql=action))
+                request = _grpc.tpc_pb2.MoveRequest(work=transactions)
                 retval = stub.MoveData(request)
                 if not retval.completed:
                     return failed_response
@@ -282,12 +289,13 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         # add node to self.xnode.nodes: 
         cprint("Adding Node to Directory")
         self.xnode.nodes.append(new_node)
-        self.xnode.directory.updateDir(new_node_keys, new_url)        
+        self.xnode.directory.updateDir(new_node_keys, new_url)  
+        cprint(str(self.xnode.directory.dir))    
 
         if len(request.keys) > 0:
             response = _grpc.tpc_pb2.JoinResponse(work=work, success=True) # We say success is true for original node
         else:
-            response = _grpc.tpc_pb2.JoinResponse(config=new_node, directory=self.xnode.directory, work=work, success=True) # sucess when original node is complete
+            response = _grpc.tpc_pb2.JoinResponse(config=new_node, directory=self.xnode.directory.dir, work=work, success=True) # sucess when original node is complete
 
         # TODO: Delete data associated with new keys
 
@@ -308,14 +316,18 @@ def run_xnode(config, directory, url):
     w3 = W3HTTPConnection()
     assert(w3.isConnected())
     source = "contracts/TPC.sol"
-    X = XNode(w3.w3, config, directory, source, url)
-    X.serve()
+    X = XNode(w3.w3, config, directory, source)
+    if url != None:
+        X.serve(url)
+    else:
+        X.serve()
     return X
 
 
 def main():
     index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
     assert(index >= 0)
+    global color
     if index >= len(SYSCONFIGX.nodes):
         print("Adding a New Node to the system")
         if sys.argv[2]:
@@ -323,9 +335,9 @@ def main():
         else:
             exit("Need system nodes url to add new node to system")
         node = NodeConfig(index, "localHost:888"+str(index), None, None)
+        color = Fore.WHITE
         run_xnode(node, None, url)
     else:
-        global color
         color = SYSCONFIGX.nodes[index].color
     run_xnode(SYSCONFIGX.nodes[index], SYSCONFIGX.directory, None)
 
