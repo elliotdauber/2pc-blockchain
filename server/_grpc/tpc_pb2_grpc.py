@@ -179,12 +179,34 @@ class ClientStub(object):
                 request_serializer=tpc__pb2.WorkOutcome.SerializeToString,
                 response_deserializer=tpc__pb2.Empty.FromString,
                 )
+        self.AddNode = channel.unary_unary(
+                '/tpc.XNode/AddNode',
+                request_serializer=tpc__pb2.JoinRequest.SerializeToString,
+                response_deserializer=tpc__pb2.JoinResponse.FromString,
+                )
+        self.MoveData = channel.unary_unary(
+                '/tpc.XNode/MoveData',
+                request_serializer=tpc__pb2.MoveRequest.SerializeToString,
+                response_deserializer=tpc__pb2.MoveResponse.FromString,
+                )
 
 
 class ClientServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def ReceiveOutcome(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AddNode(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MoveData(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -197,6 +219,16 @@ def add_ClientServicer_to_server(servicer, server):
                     servicer.ReceiveOutcome,
                     request_deserializer=tpc__pb2.WorkOutcome.FromString,
                     response_serializer=tpc__pb2.Empty.SerializeToString,
+            ),
+            'AddNode': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddNode,
+                    request_deserializer=tpc__pb2.JoinRequest.FromString,
+                    response_serializer=tpc__pb2.JoinResponse.SerializeToString,
+            ),
+            'MoveData': grpc.unary_unary_rpc_method_handler(
+                    servicer.MoveData,
+                    request_deserializer=tpc__pb2.MoveRequest.FromString,
+                    response_serializer=tpc__pb2.MoveResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -222,5 +254,39 @@ class Client(object):
         return grpc.experimental.unary_unary(request, target, '/tpc.Client/ReceiveOutcome',
             tpc__pb2.WorkOutcome.SerializeToString,
             tpc__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def AddNode(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/tpc.XNode/AddNode',
+            tpc__pb2.JoinRequest.SerializeToString,
+            tpc__pb2.JoinResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def MoveData(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/tpc.XNode/MoveData',
+            tpc__pb2.MoveRequest.SerializeToString,
+            tpc__pb2.MoveResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

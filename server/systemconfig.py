@@ -1,5 +1,7 @@
 from colorama import Fore
-
+from string import ascii_letters
+import random
+import bisect
 
 class CoordinatorConfig:
     def __init__(self, url):
@@ -32,11 +34,65 @@ _COORD = CoordinatorConfig("localhost:8888")
 SYSCONFIG = SystemConfig(_NODES, _COORD)
 
 
+class Directory:
+    def __init__(self, nodes=[], pre_dir={}):
+        self.dir = {}
+        self.urls = set()
+        if len(pre_dir.keys()) > 0:
+            for key, value in pre_dir.items():
+                self.dir[key] = value
+                for val in value:
+                    self.urls.add(val)
+        for node in nodes:
+            self.addNode(node, 3)
+            
+
+    def addNode(self, node, num_vnodes, new_keys=[]):
+        if len(new_keys) == 0:
+            new_keys, _ = self.findKeys(num_vnodes)
+        self.updateDir(new_keys, node.url)
+        return new_keys
+
+    def findKeys(self, num_vnodes):
+        new_keys = []
+        old_nodes = []
+        for _ in range(num_vnodes):
+            curr_keys = list(self.dir.keys())
+            available = [c for c in ascii_letters if c not in curr_keys and c not in new_keys]
+            if available:
+                key = random.choice(ascii_letters)
+            else:
+                key = random.choice(available)
+            old_nodes.append(self.search(key))
+            new_keys.append(key)
+        return new_keys, old_nodes
+
+    def updateDir(self, new_keys, url):
+        for key in new_keys:
+            if url in self.urls:
+                continue
+            elif key in list(self.dir.keys()):
+                self.dir[key].append(url)
+            else:
+                self.dir[key] = [url]
+        self.urls.add(url)
+        return
+
+    def search(self, key):
+        keys = sorted(list(self.dir.keys()))
+        if len(keys) == 0:
+            return ""
+        i = bisect.bisect_left(keys, key)
+        if i >= len(keys) or i < 0:
+            i = len(keys)-1
+        return self.dir[keys[i]]
+
 
 
 class SystemConfigX:
-    def __init__(self, nodes):
+    def __init__(self, nodes, directory):
         self.nodes = nodes
+        self.directory = directory
 
 m = 2**256
 _NODESX = [
@@ -45,5 +101,4 @@ _NODESX = [
     NodeConfig(id=2, url="localhost:8889", pk_range=[2*m/3 + 1, m], color=Fore.BLUE)
 ]
 
-
-SYSCONFIGX = SystemConfigX(_NODESX)
+SYSCONFIGX = SystemConfigX(_NODESX, Directory(nodes=_NODESX))
