@@ -12,10 +12,10 @@ def cback_default(state, args):
     print("state: ", state)
 
 class Client:
-    def __init__(self, abi, w3):
+    def __init__(self, abi, w3, url):
         self.abi = abi
         self.w3 = w3
-        self.timeout = 100
+        self.url = url
         self.node_urls = [node.url for node in SYSCONFIGX.nodes] #TODO: if we have time, make this info come from the nodes
 
     def checkTxStatus(self, address, callback, args):
@@ -34,7 +34,7 @@ class Client:
         url = random.choice(self.node_urls)
         with grpc.insecure_channel(url) as channel:
             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
-            request = _grpc.tpc_pb2.WorkRequest()
+            request = _grpc.tpc_pb2.WorkRequest(clienturl=self.url)
             for t in transactions:
                 transaction = _grpc.tpc_pb2.SQLTransaction(
                     sql=t["sql"],
@@ -116,8 +116,7 @@ async def simple_test(c):
 def client():
     w3 = W3HTTPConnection()
     contract = Contract("contracts/TPC.sol", w3.w3)
-    w3 = W3HTTPConnection()
-    c = BankClient(contract.abi, w3.w3)
+    c = BankClient(contract.abi, w3.w3, "localhost:8456")
     asyncio.run(simple_test(c))
 
 if __name__ == "__main__":

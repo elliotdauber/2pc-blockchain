@@ -19,13 +19,8 @@ option java_package = "io.grpc.examples.tpc";
 option java_outer_classname = "TPCProto";
 option objc_class_prefix = "TPC";
 
+//import "google/protobuf/empty.proto";
 package tpc;
-
-// The coordinator service definition.
-service Coordinator {
-  // Receives work in the coordinator and sends it to the nodes
-  rpc SendWork (WorkRequest) returns (WorkResponse) {}
-}
 
 service XNode {
     rpc SendWork (WorkRequest) returns (WorkResponse) {}
@@ -44,6 +39,8 @@ message WorkRequest {
   repeated SQLTransaction work = 1;
   string address = 2;
   int32 timeout = 3;
+  string clienturl = 4;
+  string access = 5;
 }
 
 // The response message containing the greetings
@@ -51,6 +48,7 @@ message WorkResponse {
   string address = 1;
   int32 timeout = 2;
   string error = 3;
+  int32 threshold = 4;
 }
 
 message Node{
@@ -84,4 +82,16 @@ message MoveRequest{
 
 message MoveResponse{
   bool complete= 1;
+}
+
+message WorkOutcome {
+  string address = 1;
+  string outcome = 2;
+  string data = 3;
+}
+
+message Empty {}
+
+service Client {
+  rpc ReceiveOutcome (WorkOutcome) returns (Empty) {}
 }
