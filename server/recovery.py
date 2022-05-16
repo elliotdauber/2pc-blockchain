@@ -5,7 +5,7 @@ import _grpc.tpc_pb2
 #     def __init__(self):
 #         pass
 #
-#     def m(self, msg):
+#     def m(self,msg):
 #         pass
 #
 # def fn(self, msg):
@@ -18,8 +18,14 @@ import _grpc.tpc_pb2
 # t.m("yo!")
 
 #abi = ""
+def in_range(pk, pks):
+    low = int(pks[0])
+    high = int(pks[1])
+    if low > high:
+        return pk >= low and pk < high # Normal Case
+    return pk > low and pk <= high # If we have a wrap around
 
-def recover(logfile, pk = None):
+def recover(logfile, pk_range=None):
     tx = None
     txs = []
     commit = False
@@ -41,8 +47,8 @@ def recover(logfile, pk = None):
                     continue
                 elif line[0] == "]":
                     # end of list
-                    if pk:
-                        if tx.pk == pk:
+                    if pk_range:
+                        if in_range(tx.pk, pk_range):
                             txs.append(tx)
                         return(txs)
                     else:
@@ -56,8 +62,8 @@ def recover(logfile, pk = None):
                     tx = _grpc.tpc_pb2.SQLTransaction()
                 elif line[0] == ",":
                     line = line[2:]
-                    if pk:
-                        if tx.pk == pk:
+                    if pk_range:
+                        if in_range(tx.pk, pk_range):
                             txs.append(tx)
                         return(txs)
                     else:

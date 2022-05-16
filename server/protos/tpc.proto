@@ -73,7 +73,7 @@ message JoinResponse{
   repeated SQLTransaction work = 1;
   bool success = 2;
   optional Node config = 3;
-  map<int32, url_list> directory = 4;
+  map<string, url_list> directory = 4;
 }
 
 message MoveRequest{

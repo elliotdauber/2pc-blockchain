@@ -166,22 +166,20 @@ class XNode:
         return True
 
     def join_system(self, url):
-        print("Requesting to join through node:", url)
+        cprint("Requesting to join through node:" + str(url))
         id = self.config.id
         myurl = self.config.url
-        global color
         with grpc.insecure_channel(url) as channel:
             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
             node_message = _grpc.tpc_pb2.Node(id=id, url=myurl)
             request = _grpc.tpc_pb2.JoinRequest(node=node_message, keys=[])
             retval = stub.AddNode(request)
             if retval.success:
-                print("Added!")
+                cprint("Added!")
                 info = retval.config
                 self.config = NodeConfig(info.id, info.url, info.color)
                 new_dir = {key: value.url for key, value in retval.directory.items()}
                 self.directory = Directory(pre_dir=new_dir)
-                color = self.config.color
                 cprint(str(self.directory.dir))
                 return True
             else:
@@ -235,17 +233,14 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                     node_request.work.append(tx)  # forward no-pk requests to all servers
                     continue
 
-                if node.pk_range[0] <= pk <= node.pk_range[1]:
+                if node.url in self.xnode.directory.search(pk):
 
                     node_request.work.append(tx)
-                # first = pk[0].lower()
-                # if node.pk_range[0] <= first <= node.pk_range[1]:
-                #     node_request.work.append(tx)
-                
+
 
             if len(node_request.work) > 0:
                 to_send[node.url] = node_request
-
+                
         # store contract
         contract = self.xnode.w3.eth.contract(address=address, abi=self.xnode.contract.abi)
         self.xnode.coordinating_contracts[address] = {
@@ -254,7 +249,6 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         }   
 
         self.xnode.request(address, len(to_send))
-
         #TODO: sloppy as hell
         def send_ReceiveWork(url, request):
             with grpc.insecure_channel(url) as channel:
@@ -279,7 +273,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         if start_node:
 
             # select random color
-            node_color = random.choice([x for x in dir(Fore) if x[0] != "_"])
+            node_color = random.choice(['YELLOW', 'MAGENTA', 'CYAN'])
 
             # create/initalize log and db file names
             logfile = "log" + str(id) + ".txt"
@@ -292,7 +286,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             if self.xnode.valid_new_node(id, new_url):
                 # Update my local directory 
                 new_node_keys, old_node_urls =  self.xnode.directory.findKeys(3)# MAKE THIS A SYSTEM CONFIG VALUE
-
+                new_node_keys = [str(key) for key in new_node_keys]
                 # Send to every other node 
                 cprint("Sharing the request with other nodes")
                 for node_url in self.xnode.directory.urls:
@@ -320,7 +314,8 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             c = request.node.color
             new_node = NodeConfig(id, new_url, c) # Need to remove the relevance of pk ranges
             new_node_keys = request.keys
-            work = recover(self.xnode.config.logfile, request.keys[request.idx])
+            pk_range = request.keys[request.idx]
+            work = recover(self.xnode.config.logfile, pk_range)
         
         if len(work) > 0:
             cprint("Sending work to node")
@@ -337,15 +332,15 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         # add node to self.xnode.nodes: 
         cprint("Adding Node to Directory")
         self.xnode.nodes.append(new_node)
-        self.xnode.directory.updateDir(new_node_keys, new_url)  
-        cprint(str(self.xnode.directory.dir))    
+        self.xnode.directory.updateDir(new_node_keys, new_url)    
+        cprint(str(self.xnode.directory.dir))
 
         if not start_node:
             response = _grpc.tpc_pb2.JoinResponse(work=work, success=True) # We say success is true for original node
         else:
             grpc_dict = {}
             for key, value in self.xnode.directory.dir.items():
-                grpc_dict[key] = _grpc.tpc_pb2.url_list(url=value)
+                grpc_dict[str(key)] = _grpc.tpc_pb2.url_list(url=value)
             response = _grpc.tpc_pb2.JoinResponse(config=node_message, directory=grpc_dict, work=work, success=True) # sucess when original node is complete
         # TODO: Delete data associated with new keys
 
@@ -379,13 +374,13 @@ def main():
     assert(index >= 0)
     global color
     if index >= len(SYSCONFIGX.nodes):
+        color = Fore.CYAN
         print("Adding a New Node to the system")
         if sys.argv[2]:
             url = sys.argv[2]
         else:
             exit("Need system nodes url to add new node to system")
-        node = NodeConfig(index, "localHost:888"+str(index), None, None)
-        color = Fore.WHITE
+        node = NodeConfig(index, "localHost:888"+str(index), None)
         run_xnode(node, None, url)
     else:
         color = SYSCONFIGX.nodes[index].color

@@ -1,5 +1,4 @@
 from colorama import Fore
-from string import ascii_letters
 import random
 import bisect
 
@@ -56,18 +55,14 @@ class Directory:
         new_keys = []
         old_nodes = []
         for _ in range(num_vnodes):
-            curr_keys = list(self.dir.keys())
-            available = [c for c in range(256) if c not in curr_keys and c not in new_keys]
-            if not available:
-                key = random.choice(range(256))
-            else:
-                key = random.choice(available)
+            key = random.randint(0, 2**256)
             old_nodes.append(self.search(key))
             new_keys.append(key)
         return new_keys, old_nodes
 
     def updateDir(self, new_keys, url):
         for key in new_keys:
+            key = int(key)
             if url in self.urls:
                 continue
             elif key in list(self.dir.keys()):
@@ -81,10 +76,19 @@ class Directory:
         keys = sorted(list(self.dir.keys()))
         if len(keys) == 0:
             return ""
-        i = bisect.bisect_left(keys, key)
+        i = bisect.bisect_left(keys, int(key))
         if i >= len(keys) or i < 0:
             i = len(keys)-1
         return self.dir[keys[i]]
+
+    def key_range(self, key):
+        key = int(key)
+        keys = sorted(list(self.dir.keys()))
+        i = keys.index(key) - 1
+        if key < i:
+            return (key , i)
+        return (i, key)
+        
 
 
 
