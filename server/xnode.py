@@ -178,7 +178,7 @@ class XNode:
                 cprint("Added!")
                 info = retval.config
                 self.config = NodeConfig(info.id, info.url, info.color)
-                new_dir = {key: value.url for key, value in retval.directory.items()}
+                new_dir = {int(key): value.url for key, value in retval.directory.items()}
                 self.directory = Directory(pre_dir=new_dir)
                 cprint(str(self.directory.dir))
                 return True
@@ -269,7 +269,6 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         failed_response = _grpc.tpc_pb2.JoinResponse(work=[], success=False)
         work = []
         start_node = len(request.keys) == 0
-
         if start_node:
 
             # select random color
@@ -294,6 +293,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                         i = old_node_urls.index(node_url)
                     else:
                         i = 0
+
                     if node_url == self.xnode.config.url:
                         curr_key = new_node_keys[i]
                         work = recover(self.xnode.config.logfile, curr_key)

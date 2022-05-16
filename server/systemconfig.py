@@ -73,10 +73,11 @@ class Directory:
         return
 
     def search(self, key):
+        key = int(key)
         keys = sorted(list(self.dir.keys()))
         if len(keys) == 0:
             return ""
-        i = bisect.bisect_left(keys, int(key))
+        i = bisect.bisect_left(keys, key)
         if i >= len(keys) or i < 0:
             i = len(keys)-1
         return self.dir[keys[i]]
