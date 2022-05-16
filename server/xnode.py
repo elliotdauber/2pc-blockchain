@@ -137,8 +137,10 @@ class XNode:
             retval = stub.AddNode(request)
             if retval.success:
                 print("Added!")
-                self.config = retval.config
-                self.directory = Directory(pre_dir=dict(retval.directory))
+                info = retval.config
+                self.config = NodeConfig(info.id, info.url, ['a','z'], info.color)
+                new_dir = {key: value.url for key, value in retval.directory.items()}
+                self.directory = Directory(pre_dir=new_dir)
                 color = self.config.color
                 cprint(str(self.directory.dir))
                 return True
@@ -227,8 +229,9 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         cprint("\nNew Node requesting to join system\nid: " + str(id) + "\nurl: " + str(new_url))
         failed_response = _grpc.tpc_pb2.JoinResponse(work=[], success=False)
         work = []
+        start_node = len(request.keys) == 0
 
-        if len(request.keys) == 0:
+        if start_node:
 
             # select random color
             node_color = random.choice([x for x in dir(Fore) if x[0] != "_"])
@@ -292,11 +295,13 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         self.xnode.directory.updateDir(new_node_keys, new_url)  
         cprint(str(self.xnode.directory.dir))    
 
-        if len(request.keys) > 0:
+        if not start_node:
             response = _grpc.tpc_pb2.JoinResponse(work=work, success=True) # We say success is true for original node
         else:
-            response = _grpc.tpc_pb2.JoinResponse(config=new_node, directory=self.xnode.directory.dir, work=work, success=True) # sucess when original node is complete
-
+            grpc_dict = {}
+            for key, value in self.xnode.directory.dir.items():
+                grpc_dict[key] = _grpc.tpc_pb2.url_list(url=value)
+            response = _grpc.tpc_pb2.JoinResponse(config=node_message, directory=grpc_dict, work=work, success=True) # sucess when original node is complete
         # TODO: Delete data associated with new keys
 
         return response
