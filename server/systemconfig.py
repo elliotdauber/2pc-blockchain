@@ -9,10 +9,9 @@ class CoordinatorConfig:
 
 
 class NodeConfig:
-    def __init__(self, id, url, pk_range, color):
+    def __init__(self, id, url, color):
         self.id = id
         self.url = url
-        self.pk_range = pk_range
         self.color = color
         self.logfile = "log" + str(id) + ".txt"
         self.dbfile = "db" + str(id) + ".db"
@@ -25,8 +24,8 @@ class SystemConfig:
 
 
 _NODES = [
-    NodeConfig(id=0, url="localhost:8889", pk_range=["a", "n"], color=Fore.RED),
-    NodeConfig(id=1, url="localhost:8887", pk_range=["o", "z"], color=Fore.GREEN)
+    NodeConfig(id=0, url="localhost:8889", color=Fore.RED),
+    NodeConfig(id=1, url="localhost:8887", color=Fore.GREEN)
 ]
 
 _COORD = CoordinatorConfig("localhost:8888")
@@ -58,9 +57,9 @@ class Directory:
         old_nodes = []
         for _ in range(num_vnodes):
             curr_keys = list(self.dir.keys())
-            available = [c for c in ascii_letters if c not in curr_keys and c not in new_keys]
-            if available:
-                key = random.choice(ascii_letters)
+            available = [c for c in range(256) if c not in curr_keys and c not in new_keys]
+            if not available:
+                key = random.choice(range(256))
             else:
                 key = random.choice(available)
             old_nodes.append(self.search(key))
@@ -96,9 +95,9 @@ class SystemConfigX:
 
 m = 2**256
 _NODESX = [
-    NodeConfig(id=0, url="localhost:8887", pk_range=[0, m/3], color=Fore.RED),
-    NodeConfig(id=1, url="localhost:8888", pk_range=[m/3 + 1, 2*m/3], color=Fore.GREEN),
-    NodeConfig(id=2, url="localhost:8889", pk_range=[2*m/3 + 1, m], color=Fore.BLUE)
+    NodeConfig(id=0, url="localhost:8887", color=Fore.RED),
+    NodeConfig(id=1, url="localhost:8888", color=Fore.GREEN),
+    NodeConfig(id=2, url="localhost:8889", color=Fore.BLUE)
 ]
 
 SYSCONFIGX = SystemConfigX(_NODESX, Directory(nodes=_NODESX))

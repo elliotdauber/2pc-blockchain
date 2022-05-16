@@ -24,15 +24,15 @@ class XNodeStub(object):
                 request_serializer=tpc__pb2.WorkRequest.SerializeToString,
                 response_deserializer=tpc__pb2.WorkResponse.FromString,
                 )
-        self.JoinSys = channel.unary_unary(
-                '/tpc.XNode/JoinSys',
+        self.AddNode = channel.unary_unary(
+                '/tpc.XNode/AddNode',
                 request_serializer=tpc__pb2.JoinRequest.SerializeToString,
-                response_deserializer=tpc__pb2.JoinRequest.FromString,
+                response_deserializer=tpc__pb2.JoinResponse.FromString,
                 )
-        self.LeaveSys = channel.unary_unary(
-                '/tpc.XNode/LeaveSys',
-                request_serializer=tpc__pb2.LeaveRequest.SerializeToString,
-                response_deserializer=tpc__pb2.LeaveResponse.FromString,
+        self.MoveData = channel.unary_unary(
+                '/tpc.XNode/MoveData',
+                request_serializer=tpc__pb2.MoveRequest.SerializeToString,
+                response_deserializer=tpc__pb2.MoveResponse.FromString,
                 )
 
 
@@ -51,13 +51,13 @@ class XNodeServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def JoinSys(self, request, context):
+    def AddNode(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def LeaveSys(self, request, context):
+    def MoveData(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -76,15 +76,15 @@ def add_XNodeServicer_to_server(servicer, server):
                     request_deserializer=tpc__pb2.WorkRequest.FromString,
                     response_serializer=tpc__pb2.WorkResponse.SerializeToString,
             ),
-            'JoinSys': grpc.unary_unary_rpc_method_handler(
-                    servicer.JoinSys,
+            'AddNode': grpc.unary_unary_rpc_method_handler(
+                    servicer.AddNode,
                     request_deserializer=tpc__pb2.JoinRequest.FromString,
-                    response_serializer=tpc__pb2.JoinRequest.SerializeToString,
+                    response_serializer=tpc__pb2.JoinResponse.SerializeToString,
             ),
-            'LeaveSys': grpc.unary_unary_rpc_method_handler(
-                    servicer.LeaveSys,
-                    request_deserializer=tpc__pb2.LeaveRequest.FromString,
-                    response_serializer=tpc__pb2.LeaveResponse.SerializeToString,
+            'MoveData': grpc.unary_unary_rpc_method_handler(
+                    servicer.MoveData,
+                    request_deserializer=tpc__pb2.MoveRequest.FromString,
+                    response_serializer=tpc__pb2.MoveResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -131,133 +131,6 @@ class XNode(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def JoinSys(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/tpc.XNode/JoinSys',
-            tpc__pb2.JoinRequest.SerializeToString,
-            tpc__pb2.JoinRequest.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def LeaveSys(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/tpc.XNode/LeaveSys',
-            tpc__pb2.LeaveRequest.SerializeToString,
-            tpc__pb2.LeaveResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-
-class ClientStub(object):
-    """Missing associated documentation comment in .proto file."""
-
-    def __init__(self, channel):
-        """Constructor.
-
-        Args:
-            channel: A grpc.Channel.
-        """
-        self.ReceiveOutcome = channel.unary_unary(
-                '/tpc.Client/ReceiveOutcome',
-                request_serializer=tpc__pb2.WorkOutcome.SerializeToString,
-                response_deserializer=tpc__pb2.Empty.FromString,
-                )
-        self.AddNode = channel.unary_unary(
-                '/tpc.XNode/AddNode',
-                request_serializer=tpc__pb2.JoinRequest.SerializeToString,
-                response_deserializer=tpc__pb2.JoinResponse.FromString,
-                )
-        self.MoveData = channel.unary_unary(
-                '/tpc.XNode/MoveData',
-                request_serializer=tpc__pb2.MoveRequest.SerializeToString,
-                response_deserializer=tpc__pb2.MoveResponse.FromString,
-                )
-
-
-class ClientServicer(object):
-    """Missing associated documentation comment in .proto file."""
-
-    def ReceiveOutcome(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def AddNode(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def MoveData(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-
-def add_ClientServicer_to_server(servicer, server):
-    rpc_method_handlers = {
-            'ReceiveOutcome': grpc.unary_unary_rpc_method_handler(
-                    servicer.ReceiveOutcome,
-                    request_deserializer=tpc__pb2.WorkOutcome.FromString,
-                    response_serializer=tpc__pb2.Empty.SerializeToString,
-            ),
-            'AddNode': grpc.unary_unary_rpc_method_handler(
-                    servicer.AddNode,
-                    request_deserializer=tpc__pb2.JoinRequest.FromString,
-                    response_serializer=tpc__pb2.JoinResponse.SerializeToString,
-            ),
-            'MoveData': grpc.unary_unary_rpc_method_handler(
-                    servicer.MoveData,
-                    request_deserializer=tpc__pb2.MoveRequest.FromString,
-                    response_serializer=tpc__pb2.MoveResponse.SerializeToString,
-            ),
-    }
-    generic_handler = grpc.method_handlers_generic_handler(
-            'tpc.Client', rpc_method_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
-
-
- # This class is part of an EXPERIMENTAL API.
-class Client(object):
-    """Missing associated documentation comment in .proto file."""
-
-    @staticmethod
-    def ReceiveOutcome(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/tpc.Client/ReceiveOutcome',
-            tpc__pb2.WorkOutcome.SerializeToString,
-            tpc__pb2.Empty.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
     def AddNode(request,
             target,
             options=(),
@@ -288,5 +161,66 @@ class Client(object):
         return grpc.experimental.unary_unary(request, target, '/tpc.XNode/MoveData',
             tpc__pb2.MoveRequest.SerializeToString,
             tpc__pb2.MoveResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+
+class ClientStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.ReceiveOutcome = channel.unary_unary(
+                '/tpc.Client/ReceiveOutcome',
+                request_serializer=tpc__pb2.WorkOutcome.SerializeToString,
+                response_deserializer=tpc__pb2.Empty.FromString,
+                )
+
+
+class ClientServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def ReceiveOutcome(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_ClientServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'ReceiveOutcome': grpc.unary_unary_rpc_method_handler(
+                    servicer.ReceiveOutcome,
+                    request_deserializer=tpc__pb2.WorkOutcome.FromString,
+                    response_serializer=tpc__pb2.Empty.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'tpc.Client', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+
+
+ # This class is part of an EXPERIMENTAL API.
+class Client(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def ReceiveOutcome(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/tpc.Client/ReceiveOutcome',
+            tpc__pb2.WorkOutcome.SerializeToString,
+            tpc__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

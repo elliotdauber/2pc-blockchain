@@ -178,7 +178,7 @@ class XNode:
             if retval.success:
                 print("Added!")
                 info = retval.config
-                self.config = NodeConfig(info.id, info.url, ['a','z'], info.color)
+                self.config = NodeConfig(info.id, info.url, info.color)
                 new_dir = {key: value.url for key, value in retval.directory.items()}
                 self.directory = Directory(pre_dir=new_dir)
                 color = self.config.color
@@ -285,7 +285,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             logfile = "log" + str(id) + ".txt"
             dbfile = "db" + str(id) + ".db"
 
-            new_node = NodeConfig(id, new_url, node_color, ["a", "z"]) # Need to remove the relevance of pk ranges
+            new_node = NodeConfig(id, new_url, node_color) # Need to remove the relevance of pk ranges
             node_message = _grpc.tpc_pb2.Node(id=id, url=new_url, color=node_color, log=logfile, db=dbfile)
             curr_key = 0
 
@@ -318,7 +318,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             # add work to populate any pks we share
             cprint("Collecting work for node")
             c = request.node.color
-            new_node = NodeConfig(id, new_url, c, ["a", "z"]) # Need to remove the relevance of pk ranges
+            new_node = NodeConfig(id, new_url, c) # Need to remove the relevance of pk ranges
             new_node_keys = request.keys
             work = recover(self.xnode.config.logfile, request.keys[request.idx])
         
