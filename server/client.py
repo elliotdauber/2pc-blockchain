@@ -59,10 +59,10 @@ class Client:
             "data": data
         }
 
-    def waitForResponse(self, address, timeout):
+    async def waitForResponse(self, address, timeout):
         total_time = 0
         while not self.outstanding_txs.responded(address):
-            time.sleep(1) 
+            ayncio.sleep(1) 
             total_time += 1
             if total_time >= timeout:
                 return None
@@ -84,7 +84,7 @@ class Client:
             retval = stub.SendWork(request)
             if blk:
                 self.outstanding_txs.add_request(retval.address, retval.threshold)
-                outcome = self.waitForResponse(retval.address, retval.timeout)
+                outcome = await self.waitForResponse(retval.address, retval.timeout)
                 data = self.outstanding_txs.data(retval.address)
                 if outcome is None: # timeout
                     result = self.checkTxStatus(retval.address) #TODO
@@ -180,6 +180,19 @@ async def simple_test(c):
     print(await c.CHECK_BALANCES(["elliot", "nick", "zach"]))
     #await c.DELETE_ACCOUNT("nick")
 
+async def init_tables(c):
+    await c.CREATE_CUSTOMERS_TABLE()
+
+async def small_test(c):
+    await c.CREATE_ACCOUNT("isaac")
+    await c.CREATE_ACCOUNT("sahit")
+    await c.DEPOSIT("isaac", 15)
+    await print(await c.CHECK_BALANCE("isaac"))
+    await c.DEPOSIT("sahit", 5)
+    print(await c.CHECK_BALANCE("sahit"))
+    await c.TRANSFER("isaac", "sahit", 5)
+    print(await c.CHECK_BALANCES(["isaac", "sahit"]))
+
 def client():
     w3 = W3HTTPConnection()
     contract = Contract("contracts/TPC.sol", w3.w3)
@@ -187,7 +200,8 @@ def client():
     c = BankClient(contract.abi, w3.w3, url)
 
     tests = {
-        "simple": simple_test
+        "simple": simple_test,
+        "small": small_test,
     }   
 
     while True:

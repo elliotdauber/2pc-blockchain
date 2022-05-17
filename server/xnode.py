@@ -234,8 +234,8 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                     continue
 
                 if node.url in self.xnode.directory.search(pk):
-
                     node_request.work.append(tx)
+                    cprint("\nURL: " + str(node.url) + "\nWORK: " + str(tx))
 
 
             if len(node_request.work) > 0:
