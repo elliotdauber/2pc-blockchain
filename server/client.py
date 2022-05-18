@@ -62,7 +62,7 @@ class Client:
     async def waitForResponse(self, address, timeout):
         total_time = 0
         while not self.outstanding_txs.responded(address):
-            ayncio.sleep(1) 
+            await asyncio.sleep(1) 
             total_time += 1
             if total_time >= timeout:
                 return None
@@ -82,13 +82,15 @@ class Client:
                 )
                 request.work.append(transaction)
             retval = stub.SendWork(request)
+            print("THRESHOLD IS " + str(retval.threshold) + " FOR " + retval.address)
             if blk:
                 self.outstanding_txs.add_request(retval.address, retval.threshold)
                 outcome = await self.waitForResponse(retval.address, retval.timeout)
                 data = self.outstanding_txs.data(retval.address)
                 if outcome is None: # timeout
                     result = self.checkTxStatus(retval.address) #TODO
-                    outcome = result["status"]
+                    print("RESULT: ", result)
+                    outcome = result["state"]
                     data = result["data"]
                 return self.transform_data(data) if outcome == "COMMIT" else outcome
 
@@ -193,6 +195,12 @@ async def small_test(c):
     await c.TRANSFER("isaac", "sahit", 5)
     print(await c.CHECK_BALANCES(["isaac", "sahit"]))
 
+async def balance(c):
+    await c.CREATE_CUSTOMERS_TABLE()
+    await c.CREATE_ACCOUNT("elliot")
+    await c.DEPOSIT("elliot", 24)
+    print(await c.CHECK_BALANCE("elliot"))
+
 def client():
     w3 = W3HTTPConnection()
     contract = Contract("contracts/TPC.sol", w3.w3)
@@ -202,6 +210,7 @@ def client():
     tests = {
         "simple": simple_test,
         "small": small_test,
+        "balance": balance
     }   
 
     while True:

@@ -44,7 +44,7 @@ class XNode:
             XNodeGRPC(self), server)
         server.add_insecure_port(self.config.url)
         server.start()
-        if url != None:
+        if url is not None:
             self.join_system(url)
         server.wait_for_termination()
 
@@ -140,7 +140,7 @@ class XNode:
                     with grpc.insecure_channel(clienturl) as channel:
                         stub = _grpc.tpc_pb2_grpc.ClientStub(channel)
                         outcome_request = _grpc.tpc_pb2.WorkOutcome(address=address, outcome=status) #TODO: data? only for reads
-                        print("ACCESS: ", access)
+                        cprint("ACCESS: " + access)
                         if access == "r":
                             tx_hash = contract.functions.set_data(data).transact()
                             self.w3.eth.wait_for_transaction_receipt(tx_hash)
@@ -214,6 +214,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         return _grpc.tpc_pb2.WorkResponse()
 
     def SendWork(self, request, context):
+        # cprint("GOT WORK")
         work = request.work
         if len(work) == 0:
             return _grpc.tpc_pb2.WorkResponse(error="no work given, operation aborted")
@@ -232,10 +233,10 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                 if pk == empty_string_hash:
                     node_request.work.append(tx)  # forward no-pk requests to all servers
                     continue
-
+                # cprint("DIR LOOKUP: " + str(node.url) + " " + str(self.xnode.directory.search(pk)))
                 if node.url in self.xnode.directory.search(pk):
                     node_request.work.append(tx)
-                    cprint("\nURL: " + str(node.url) + "\nWORK: " + str(tx))
+                    # cprint("URL: " + str(node.url) + "\nWORK: " + str(tx))
 
 
             if len(node_request.work) > 0:
@@ -362,7 +363,7 @@ def run_xnode(config, directory, url):
     assert(w3.isConnected())
     source = "contracts/TPC.sol"
     X = XNode(w3.w3, config, directory, source)
-    if url != None:
+    if url is not None:
         X.serve(url)
     else:
         X.serve()
@@ -380,11 +381,11 @@ def main():
             url = sys.argv[2]
         else:
             exit("Need system nodes url to add new node to system")
-        node = NodeConfig(index, "localHost:888"+str(index), None)
+        node = NodeConfig(index, "localhost:888"+str(index), None)
         run_xnode(node, None, url)
     else:
         color = SYSCONFIGX.nodes[index].color
-    run_xnode(SYSCONFIGX.nodes[index], SYSCONFIGX.directory, None)
+        run_xnode(SYSCONFIGX.nodes[index], SYSCONFIGX.directory, None)
 
 
 if __name__ == "__main__":
