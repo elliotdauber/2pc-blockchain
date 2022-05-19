@@ -27,7 +27,7 @@ class Directory:
 
     def addNode(self, node, num_vnodes, new_keys=[]):
         if len(new_keys) == 0:
-            new_keys, _ = self.findKeys(node, num_vnodes)
+            new_keys, _ = self.findKeys(node.id, num_vnodes)
         self.updateDir(new_keys, node.url)
         return new_keys
 
