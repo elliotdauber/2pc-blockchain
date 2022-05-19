@@ -3,7 +3,7 @@ import sys
 
 def test(pk, n):
     d = SYSCONFIGX.directory
-    for i in range(n):
+    for _ in range(n):
         print("\n\n")
         pki = int(pk, 16)
         print("PK BEFORE:", pki)
