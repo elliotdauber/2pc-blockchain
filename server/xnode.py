@@ -285,7 +285,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
 
             if self.xnode.valid_new_node(id, new_url):
                 # Update my local directory 
-                new_node_keys, old_node_urls =  self.xnode.directory.findKeys(3)# MAKE THIS A SYSTEM CONFIG VALUE
+                new_node_keys, old_node_urls =  self.xnode.directory.findKeys(id, 3)# MAKE THIS A SYSTEM CONFIG VALUE
                 new_node_keys = [str(key) for key in new_node_keys]
                 # Send to every other node 
                 cprint("Sharing the request with other nodes")
