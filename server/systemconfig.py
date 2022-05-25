@@ -27,16 +27,16 @@ class Directory:
 
     def addNode(self, node, num_vnodes, new_keys=[]):
         if len(new_keys) == 0:
-            new_keys, _ = self.findKeys(node, num_vnodes)
+            new_keys, _ = self.findKeys(node.id, num_vnodes)
         self.updateDir(new_keys, node.url)
         return new_keys
 
-    def findKeys(self, node, num_vnodes):
+    def findKeys(self, nodeid, num_vnodes):
         new_keys = []
         old_nodes = []
         for i in range(num_vnodes):
             # key = random.randint(0, 2**256)
-            pre_hash = str(node.id) + "_" + str(i)
+            pre_hash = str(nodeid) + "_" + str(i)
             key = int(hashlib.sha256(bytes(pre_hash, "utf-8")).hexdigest(), 16)
             old_nodes.append(self.search(key))
             new_keys.append(key)

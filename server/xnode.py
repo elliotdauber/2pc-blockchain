@@ -157,11 +157,11 @@ class XNode:
         tx_hash = contract.functions.request(num_nodes, self.timeout).transact()
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
 
-    def valid_new_node(self, id, url):
+    def valid_new_node(self, _id, url):
         for n in self.nodes:
             if n.url == url:
                 return False
-            if n.id == id:
+            if n.id == _id:
                 return False
         return True
 
@@ -264,9 +264,9 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         return response
 
     def AddNode(self, request, context): #TODO: Add Logging for recovery
-        id = request.node.id
+        _id = request.node.id
         new_url = request.node.url
-        cprint("\nNew Node requesting to join system\nid: " + str(id) + "\nurl: " + str(new_url))
+        cprint("\nNew Node requesting to join system\nid: " + str(_id) + "\nurl: " + str(new_url))
         failed_response = _grpc.tpc_pb2.JoinResponse(work=[], success=False)
         work = []
         start_node = len(request.keys) == 0
@@ -276,16 +276,16 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             node_color = random.choice(['YELLOW', 'MAGENTA', 'CYAN'])
 
             # create/initalize log and db file names
-            logfile = "log" + str(id) + ".txt"
-            dbfile = "db" + str(id) + ".db"
+            logfile = "log" + str(_id) + ".txt"
+            dbfile = "db" + str(_id) + ".db"
 
-            new_node = NodeConfig(id, new_url, node_color) # Need to remove the relevance of pk ranges
-            node_message = _grpc.tpc_pb2.Node(id=id, url=new_url, color=node_color, log=logfile, db=dbfile)
+            new_node = NodeConfig(_id, new_url, node_color) # Need to remove the relevance of pk ranges
+            node_message = _grpc.tpc_pb2.Node(id=_id, url=new_url, color=node_color, log=logfile, db=dbfile)
             curr_key = 0
 
-            if self.xnode.valid_new_node(id, new_url):
+            if self.xnode.valid_new_node(_id, new_url):
                 # Update my local directory 
-                new_node_keys, old_node_urls =  self.xnode.directory.findKeys(3)# MAKE THIS A SYSTEM CONFIG VALUE
+                new_node_keys, old_node_urls =  self.xnode.directory.findKeys(_id, 3)# MAKE THIS A SYSTEM CONFIG VALUE
                 new_node_keys = [str(key) for key in new_node_keys]
                 # Send to every other node 
                 cprint("Sharing the request with other nodes")
