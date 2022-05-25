@@ -53,9 +53,29 @@ class XNode:
             f.write(text + "\n")
 
     def can_transact(self, work):
-        if all([action.pk not in self.working_pk for action in work]):
-            for action in work: 
-                self.working_pk.add(action.pk)
+        db = sqlite3.connect(self.config.dbfile)
+        cursor = db.cursor()
+        if all([tx.pk not in self.working_pk for tx in work]): # Check that no pks are already being manipulated
+            for tx in work:
+
+                command = tx.sql.split(" ")
+
+                if command[0] == "CREATE": # Check for duplicate creates
+                    check = ("SELECT * FROM sqlite_master") #WHERE type = 'table' AND name = '" + command[2] + "';"
+                    if len([x for x in cursor.execute(check)]) > 0: # Cant Create a table that already exists without deleting it
+                        return False
+
+                if command[0] == "INSERT": # Check for Creating an account that already exists
+                    check = ("SELECT * FROM sqlite_master WHERE type = 'table' AND name = '" + command[2] + "';") # Check table exists
+                    print(len([x for x in cursor.execute(check)]))
+                    if len([x for x in cursor.execute(check)]) < 0:
+                        return False
+                    check = "SELECT * FROM customers WHERE pk=" + command[6][1:-1] + ";"
+                    print(len([x for x in cursor.execute(check)]))
+                    if len([x for x in cursor.execute(check)]) > 0:
+                        return False
+
+            for tx in work: self.working_pk.add(tx.pk)
             return True
         return False
 
