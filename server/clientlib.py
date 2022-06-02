@@ -17,8 +17,8 @@ def cback_default(state, args):
 
 class Client:
     def __init__(self, url):
-        self.w3 = W3HTTPConnection()
-        contract = Contract("contracts/TPC.sol", self.w3.w3)
+        self.w3 = W3HTTPConnection().w3
+        contract = Contract("contracts/TPC.sol", self.w3)
         self.abi = contract.abi
         self.url = url
         self.outstanding_txs = TransactionStatusMap()
@@ -82,7 +82,13 @@ class Client:
                     pk=pk_hash
                 )
                 request.work.append(transaction)
-            retval = stub.SendWork(request)
+            try:
+                retval = stub.SendWork(request, timeout=3)
+            except grpc.RpcError as e:
+                #timeout
+                print(e.code().value)
+                return
+    
             print("THRESHOLD IS " + str(retval.threshold) + " FOR " + retval.address)
             if blk:
                 self.outstanding_txs.add_request(retval.address, retval.threshold)
