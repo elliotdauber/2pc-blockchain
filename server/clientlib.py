@@ -87,7 +87,7 @@ class Client:
             except grpc.RpcError as e:
                 #timeout
                 print(e.code().value)
-                return
+                return "ABORT" #todo: is this reflected in the nodes?
     
             print("THRESHOLD IS " + str(retval.threshold) + " FOR " + retval.address)
             if blk:
