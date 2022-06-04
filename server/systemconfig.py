@@ -27,20 +27,23 @@ class Directory:
 
     def addNode(self, node, num_vnodes, new_keys=[]):
         if len(new_keys) == 0:
-            new_keys, _ = self.findKeys(node.id, num_vnodes)
+            new_keys, _, _ = self.findKeys(node.id, num_vnodes)
         self.updateDir(new_keys, node.url)
         return new_keys
 
     def findKeys(self, node_id, num_vnodes):
         new_keys = []
         old_nodes = []
+        old_keys = []
         for i in range(num_vnodes):
             # key = random.randint(0, 2**256)
             pre_hash = str(node_id) + "_" + str(i)
             key = int(hashlib.sha256(bytes(pre_hash, "utf-8")).hexdigest(), 16)
-            old_nodes.append(self.search(key))
+            old_key, old_url = self.search(key)
+            old_nodes.append(old_url)
+            old_keys.append(old_key)
             new_keys.append(key)
-        return new_keys, old_nodes
+        return new_keys, old_keys, old_nodes
 
     def updateDir(self, new_keys, url):
         for key in new_keys:
@@ -59,11 +62,11 @@ class Directory:
         # print("KEY: ", key)
         keys = sorted(list(self.dir.keys()))
         if len(keys) == 0:
-            return "" #todo: return empty list for type safety?
+            return 0, "" #todo: return empty list for type safety?
         i = bisect.bisect_left(keys, key)
         if i >= len(keys) or i < 0:
             i = len(keys)-1
-        return self.dir[keys[i]]
+        return (keys[i], self.dir[keys[i]])
 
     def key_range(self, key):
         key = int(key)

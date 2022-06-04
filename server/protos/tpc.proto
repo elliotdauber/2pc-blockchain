@@ -63,6 +63,7 @@ message JoinRequest{
   Node node = 1;
   repeated string keys = 2;
   optional int32 idx = 3;
+  repeated string old_keys = 4;
 }
 
 message url_list{

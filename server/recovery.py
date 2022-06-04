@@ -1,4 +1,5 @@
 import _grpc.tpc_pb2
+from ethquery import query
 
 # test of making a "header" file in python -- declare fn prototypes upfront and then assign the functions later
 # class Test:
@@ -21,6 +22,9 @@ import _grpc.tpc_pb2
 def in_range(pk, pks):
     low = int(pks[0])
     high = int(pks[1])
+    if pk == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855": #The empty PK
+        return True
+    pk = int(pk, 16)
     if low > high:
         return pk >= low and pk < high # Normal Case
     return pk > low and pk <= high # If we have a wrap around
@@ -35,13 +39,13 @@ def recover(logfile, pk_range=None):
                 line = f.readline().strip("\n")
                 if not line:
                     break
-
                 if line[:2] == "0x":
-                    contract = None #TODO: set contract using line
-                    state = "COMMIT" #contract.functions.getState().call()
+                    state = query(line)
                     if state == "COMMIT":
                         commit = True
                         txs = []
+                    else:
+                        commit = False
                     continue
                 elif not commit:
                     continue
@@ -50,11 +54,11 @@ def recover(logfile, pk_range=None):
                     if pk_range:
                         if in_range(tx.pk, pk_range):
                             txs.append(tx)
-                        return(txs)
+                        #return(txs)
                     else:
                         txs.append(tx)
                         print(txs)
-                        return(txs)
+                        #return(txs)
                     #self.transact_multiple(txs)
                     continue
                 elif line[0] == "[":
@@ -78,8 +82,9 @@ def recover(logfile, pk_range=None):
                     tx.sql = val
                 elif key == "pk":
                     tx.pk = val
-    except:
-        print("NO LOG TO RECOVER FROM")
+            return txs
+    except FileNotFoundError:
+        print("NO LOG FILE FOUND")
         return []
 
 if __name__ == "__main__":

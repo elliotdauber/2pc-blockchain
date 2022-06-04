@@ -12,6 +12,7 @@ def query(address):
     contract = w3.eth.contract(address=address, abi=abi)
     state = contract.functions.getState().call()
     print("state", state)
+    return state
 
 def query_data(address):
     source = "contracts/TPC.sol"

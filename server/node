@@ -2,14 +2,13 @@
 
 # runs 3 server instances and the client
 
-source "server_env/bin/activate"
+source server_env/bin/activate
 
-rm -f log*.txt
-rm -f db*.db
+rm -f log{$1}.txt
+rm -f db{$1}.db
 
-python3 xnode.py 0 &
-python3 xnode.py 1 &
-python3 xnode.py 2 &
+python3 xnode.py $1 $2
+
 sleep 3
 while true
 do
