@@ -235,10 +235,11 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
     def SendWork(self, request, context):
         # cprint("GOT WORK")
         work = request.work
+        address = request.address
         if len(work) == 0:
             return _grpc.tpc_pb2.WorkResponse(error="no work given, operation aborted")
 
-        address = self.xnode.contract.deploy()
+        # address = self.xnode.contract.deploy()
         cprint("deployed at address " + address)
 
         # figuring out where to send the data
@@ -269,7 +270,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         }   
 
         self.xnode.request(address, len(to_send))
-        #TODO: sloppy as hell
+
         def send_ReceiveWork(url, request):
             with grpc.insecure_channel(url) as channel:
                 stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
@@ -279,7 +280,7 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             thread = threading.Thread(None, send_ReceiveWork, None, [url, request])
             thread.start()
 
-        response = _grpc.tpc_pb2.WorkResponse(address=address, timeout=self.xnode.timeout, threshold=len(to_send))
+        response = _grpc.tpc_pb2.WorkResponse(timeout=self.xnode.timeout, threshold=len(to_send))
         return response
 
     def AddNode(self, request, context): #TODO: Add Logging for recovery
