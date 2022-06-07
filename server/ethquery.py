@@ -11,7 +11,7 @@ def query(address):
     abi = c.abi
     contract = w3.eth.contract(address=address, abi=abi)
     state = contract.functions.getState().call()
-    print("state", state)
+    #print("state", state)
     return state
 
 def query_data(address):

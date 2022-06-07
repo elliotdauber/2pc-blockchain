@@ -286,7 +286,6 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         cprint("\nNew Node requesting to join system\nid: " + str(_id) + "\nurl: " + str(new_url))
         failed_response = _grpc.tpc_pb2.JoinResponse(work=[], success=False)
         work = []
-        cprint(str(len(request.keys)))
         start_node = len(request.keys) == 0
         if start_node == True:
             # select random color
@@ -312,13 +311,13 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                 cprint("Sharing the request with other nodes")
                 key_replaced = False
                 for node_url in self.xnode.directory.urls:
-                    i = None
+                    i = -1
                     if node_url in old_node_urls:
                         i = old_node_urls.index(node_url)
-                    if i != None:
+                    if i != -1:
                         key_replaced = True
                     if node_url == self.xnode.config.url:
-                        if i != None:
+                        if i != -1:
                             curr_key = new_node_keys[i]
                             work = recover(self.xnode.config.logfile, (old_node_keys[i], curr_key))
                     else:
@@ -340,24 +339,49 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             c = request.node.color
             new_node = NodeConfig(id, new_url, c) # Need to remove the relevance of pk ranges
             new_node_keys = request.keys
-            if request.idx != None:
+            if request.idx != -1:
                 pk_range = (request.keys[request.idx], request.old_keys[request.idx])
                 work = recover(self.xnode.config.logfile, pk_range)
         if work == None:
             work = []
         if len(work) > 0:
-            print("Work:", type(work), work)
             cprint("Sending work to node")
+            #for demo purposes
+            moved_accounts = set()
+            cleaned_work = []
+            for tx in work:
+                tx_sql = tx.sql.split(' ')
+                if tx_sql[0] == "INSERT":
+                    moved_accounts.add("Add Account: " + tx_sql[6])
+                if tx_sql[0] == "CREATE":
+                    moved_accounts.add("Create Table: " + tx_sql[2])
+                if tx_sql[0] != 'SELECT':
+                    cleaned_work.append(tx)
+            cprint("Updating new node with: " + str(moved_accounts))
+            work = cleaned_work
             with grpc.insecure_channel(new_url) as channel:
                 stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
-                #transactions = []
-                #print(type(work))
-                #for action in work: 
-                #    transactions.append(_grpc.tpc_pb2.SQLTransaction(pk=action.pk, sql=action.sql))
                 request = _grpc.tpc_pb2.MoveRequest(work=work)
                 retval = stub.MoveData(request)
                 if not retval.complete:
                     return failed_response
+            keys_to_delete = set()
+            to_delete = []
+            for tx in work:
+                sql = str(tx.sql)
+                name_loc = sql.find("pk=")
+                if name_loc != -1 :
+                    name = sql[name_loc + 3:]
+                    if name not in keys_to_delete:
+                        op1 = {
+                            "pk": tx.pk,
+                            "sql": "DELETE FROM customers WHERE pk=" + name 
+                        }
+                        to_delete.append(op1)
+                        keys_to_delete.add(name)
+            self.xnode.transact_multiple(to_delete, "w")
+            cprint("Old PKs Removed")
+            
 
         # add node to self.xnode.nodes: 
         cprint("Adding Node to Directory")
@@ -377,16 +401,15 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         return response
 
     def MoveData(self, request, context):
-        try:
-            work = request.work
-            transactions = []
-            for i in range(len(work)):
-                transactions.append(work[i])
-            self.xnode.transact_multiple(transactions, "X")
-            print("Updates Completed")
-            response = _grpc.tpc_pb2.MoveResponse(complete=True)
-        except:
-            response = _grpc.tpc_pb2.MoveResponse(complete=False)
+        work = request.work
+        transactions = []
+        for i in range(len(work)):
+            transactions.append(work[i])
+        self.xnode.transact_multiple(transactions, "X")
+        print("Updates Completed")
+        response = _grpc.tpc_pb2.MoveResponse(complete=True)
+        #except:
+        #response = _grpc.tpc_pb2.MoveResponse(complete=False)
         return response
 
 

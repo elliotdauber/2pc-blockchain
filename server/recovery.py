@@ -43,7 +43,7 @@ def recover(logfile, pk_range=None):
                     state = query(line)
                     if state == "COMMIT":
                         commit = True
-                        txs = []
+                        #txs = []
                     else:
                         commit = False
                     continue
@@ -69,7 +69,6 @@ def recover(logfile, pk_range=None):
                     if pk_range:
                         if in_range(tx.pk, pk_range):
                             txs.append(tx)
-                        return(txs)
                     else:
                         txs.append(tx)
                     tx = _grpc.tpc_pb2.SQLTransaction()
@@ -77,7 +76,7 @@ def recover(logfile, pk_range=None):
                 #TODO: handle multiple txs for one address (comma separator)
                 halves = line.split(":")
                 key = halves[0]
-                val = halves[1].strip(" \"")
+                val = halves[1].strip(" \"").replace("\\", "")
                 if key == "sql":
                     tx.sql = val
                 elif key == "pk":

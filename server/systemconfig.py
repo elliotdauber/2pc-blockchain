@@ -43,7 +43,7 @@ class Directory:
             old_nodes.append(old_url)
             old_keys.append(old_key)
             new_keys.append(key)
-        return new_keys, old_keys, old_nodes
+        return new_keys, old_keys, old_nodes[0]
 
     def updateDir(self, new_keys, url):
         for key in new_keys:
@@ -66,7 +66,7 @@ class Directory:
         i = bisect.bisect_left(keys, key)
         if i >= len(keys) or i < 0:
             i = len(keys)-1
-        return (keys[i], self.dir[keys[i]])
+        return (keys[i-1], self.dir[keys[i-1]])
 
     def key_range(self, key):
         key = int(key)
