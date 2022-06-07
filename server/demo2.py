@@ -30,9 +30,9 @@ async def rundemo(c, n, r):
     print(await c.CHECK_BALANCES(names[:n]))
 
 
-async def demo(n, r):
+async def demo(c, n, r):
     url_stub = "localhost:4915"
-    numclients = 3
+    numclients = c
     clients = []
     tasks = []
     for i in range(numclients):
@@ -53,4 +53,4 @@ async def demo(n, r):
 
 
 if __name__ == "__main__":
-    asyncio.run(demo(int(sys.argv[1]), int(sys.argv[2])))
+    asyncio.run(demo(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3])))

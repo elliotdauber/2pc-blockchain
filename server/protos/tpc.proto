@@ -27,6 +27,7 @@ service XNode {
     rpc ReceiveWork (WorkRequest) returns (WorkResponse) {}
     rpc AddNode (JoinRequest) returns (JoinResponse) {}
     rpc MoveData (MoveRequest) returns (MoveResponse) {}
+    rpc Kill (Empty) returns (Empty) {}
 }
 
 message SQLTransaction {

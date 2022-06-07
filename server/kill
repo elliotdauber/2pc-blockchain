@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# runs 3 server instances and the client
+
+source "server_env/bin/activate"
+
+python3 killnode.py $1

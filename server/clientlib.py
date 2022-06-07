@@ -83,34 +83,41 @@ class Client:
     async def makeRequest(self, transactions, access="w", blk=True):
         print("Client at " + self.url + " called makeRequest API with: ")
         print(transactions)
-        url = random.choice(self.node_urls)
-        with grpc.insecure_channel(url) as channel:
-            stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
-            address = self.contract.deploy()
-            request = _grpc.tpc_pb2.WorkRequest(clienturl=self.url, access=access, address=address)
-            for t in transactions:
-                pk = t["pk"].encode()
-                pk_hash = hashlib.sha256(pk).hexdigest()
-                transaction = _grpc.tpc_pb2.SQLTransaction(
-                    sql=t["sql"],
-                    pk=pk_hash
-                )
-                request.work.append(transaction)
-            try:
-                retval = stub.SendWork(request, timeout=5)
-            except grpc.RpcError as e:
-                print("SendWork RPC timed out")
-                if blk:
-                    result = self.checkTxStatus(address)
-                    if result["state"] == "VOTING":
-                        contract = self.w3.eth.contract(address=address, abi=self.abi)
-                        timeout = contract.functions.getTimeout().call()
-                        ret = await self.getResult(timeout, address, retval.threshold)
-                        return ret
 
-            if blk:
-                ret = await self.getResult(retval.timeout, address, retval.threshold)
-                return ret
+        #would remove this loop in production, but used to get around some unimplemented stuff in the demo
+        while True:
+            try:
+                url = random.choice(self.node_urls)
+                with grpc.insecure_channel(url) as channel:
+                    stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
+                    address = self.contract.deploy()
+                    request = _grpc.tpc_pb2.WorkRequest(clienturl=self.url, access=access, address=address)
+                    for t in transactions:
+                        pk = t["pk"].encode()
+                        pk_hash = hashlib.sha256(pk).hexdigest()
+                        transaction = _grpc.tpc_pb2.SQLTransaction(
+                            sql=t["sql"],
+                            pk=pk_hash
+                        )
+                        request.work.append(transaction)
+                    try:
+                        retval = stub.SendWork(request, timeout=5)
+                    except grpc.RpcError as e:
+                        print("SendWork RPC timed out")
+                        if blk:
+                            result = self.checkTxStatus(address)
+                            if result["state"] == "VOTING":
+                                contract = self.w3.eth.contract(address=address, abi=self.abi)
+                                timeout = contract.functions.getTimeout().call()
+                                ret = await self.getResult(timeout, address, retval.threshold)
+                                return ret
+
+                    if blk:
+                        ret = await self.getResult(retval.timeout, address, retval.threshold)
+                        return ret
+                    return
+            except:
+                pass
 
 
 class ClientGRPC(_grpc.tpc_pb2_grpc.ClientServicer):

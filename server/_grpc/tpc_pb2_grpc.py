@@ -34,6 +34,11 @@ class XNodeStub(object):
                 request_serializer=tpc__pb2.MoveRequest.SerializeToString,
                 response_deserializer=tpc__pb2.MoveResponse.FromString,
                 )
+        self.Kill = channel.unary_unary(
+                '/tpc.XNode/Kill',
+                request_serializer=tpc__pb2.Empty.SerializeToString,
+                response_deserializer=tpc__pb2.Empty.FromString,
+                )
 
 
 class XNodeServicer(object):
@@ -63,6 +68,12 @@ class XNodeServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def Kill(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_XNodeServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -85,6 +96,11 @@ def add_XNodeServicer_to_server(servicer, server):
                     servicer.MoveData,
                     request_deserializer=tpc__pb2.MoveRequest.FromString,
                     response_serializer=tpc__pb2.MoveResponse.SerializeToString,
+            ),
+            'Kill': grpc.unary_unary_rpc_method_handler(
+                    servicer.Kill,
+                    request_deserializer=tpc__pb2.Empty.FromString,
+                    response_serializer=tpc__pb2.Empty.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -161,6 +177,23 @@ class XNode(object):
         return grpc.experimental.unary_unary(request, target, '/tpc.XNode/MoveData',
             tpc__pb2.MoveRequest.SerializeToString,
             tpc__pb2.MoveResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Kill(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/tpc.XNode/Kill',
+            tpc__pb2.Empty.SerializeToString,
+            tpc__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
