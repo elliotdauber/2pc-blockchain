@@ -57,7 +57,6 @@ def recover(logfile, pk_range=None):
                         #return(txs)
                     else:
                         txs.append(tx)
-                        print(txs)
                         #return(txs)
                     #self.transact_multiple(txs)
                     continue

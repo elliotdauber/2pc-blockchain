@@ -10,6 +10,8 @@ def query(address):
     c = Contract(source, w3)
     abi = c.abi
     contract = w3.eth.contract(address=address, abi=abi)
+    tx_hash = contract.functions.verdict.transact()
+    w3.eth.wait_for_transaction_receipt(tx_hash)
     state = contract.functions.getState().call()
     #print("state", state)
     return state

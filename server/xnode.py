@@ -15,7 +15,6 @@ import time
 import hashlib
 import os
 
-
 color = ""
 
 def cprint(msg):
@@ -39,17 +38,20 @@ class XNode:
 
     # NODE FUNCTIONS
 
-    def serve(self, url=None):
+    def serve(self, url=None, txs=[]):
         # Initialize the server
         cprint("STARTING XNODE SERVER " + str(self.config.id) + " @ " + self.config.url)
         self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         _grpc.tpc_pb2_grpc.add_XNodeServicer_to_server(
-            XNodeGRPC(self), self.server)
-        self.server.add_insecure_port(self.config.url)
-        self.server.start()
+            XNodeGRPC(self), server)
+        server.add_insecure_port(self.config.url)
+        server.start()
+        if len(txs) > 0:
+            self.transact_multiple(self, txs, "w")
         if url is not None:
             self.join_system(url)
-        self.server.wait_for_termination()
+        
+        server.wait_for_termination()
 
     def log(self, text):
         with open(self.config.logfile, 'a+') as f:
@@ -178,12 +180,15 @@ class XNode:
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
 
     def valid_new_node(self, _id, url):
+        i = 0
         for n in self.nodes:
             if n.url == url:
-                return False
+                i += 1
             if n.id == _id:
-                return False
-        return True
+                i += 1
+            if i > 0:
+                return i
+        return 0
 
     def join_system(self, url):
         cprint("Requesting to join through node:" + str(url))
@@ -310,8 +315,8 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             new_node = NodeConfig(_id, new_url, node_color) # Need to remove the relevance of pk ranges
             node_message = _grpc.tpc_pb2.Node(id=_id, url=new_url, color=node_color, log=logfile, db=dbfile)
             curr_key = 0
-
-            if self.xnode.valid_new_node(_id, new_url):
+            new_node_type = self.xnode.valid_new_node(_id, new_url) # New and valid = 0, Old and failed = 2, Bad = 1
+            if  new_node_type == 0:
                 # Update my local directory 
                 new_node_keys,  old_node_keys, old_node_urls =  self.xnode.directory.findKeys(_id, 3)# MAKE THIS A SYSTEM CONFIG VALUE
                 new_node_keys = [str(key) for key in new_node_keys]
@@ -342,7 +347,13 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                 if not key_replaced:
                     work = recover(self.xnode.config.logfile, ("0", "0"))
                 cprint("\nAll other nodes have confirmed admission")
-            else:
+            elif new_node_type == 2:
+                grpc_dict = {}
+                for key, value in self.xnode.directory.dir.items():
+                    grpc_dict[str(key)] = _grpc.tpc_pb2.url_list(url=value)
+                response = _grpc.tpc_pb2.JoinResponse(config=node_message, directory=grpc_dict, work=work, success=True) # sucess when original node is complete
+                return response
+            else: 
                 return failed_response
 
         else:
@@ -428,14 +439,14 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
 
 
 
-def run_xnode(config, directory, url):
+def run_xnode(config, directory, url, txs):
     cprint("starting up a node...")
     w3 = W3HTTPConnection()
     assert(w3.isConnected())
     source = "contracts/TPC.sol"
     X = XNode(w3.w3, config, directory, source)
     if url is not None:
-        X.serve(url)
+        X.serve(url, txs)
     else:
         X.serve()
     return X
@@ -444,19 +455,23 @@ def run_xnode(config, directory, url):
 def main():
     index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
     assert(index >= 0)
+    logfile = "log" + str(index) + ".txt"
+    txs = []
+    if os.path.exists(logfile):
+        txs = recover(logfile)
     global color
     if index >= len(SYSCONFIGX.nodes):
-        color = Fore.CYAN
+        color = random.choice([Fore.MAGENTA, Fore.CYAN, Fore.YELLOW])
         print("Adding a New Node to the system")
         if sys.argv[2]:
             url = sys.argv[2]
         else:
             exit("Need system nodes url to add new node to system")
         node = NodeConfig(index, "localhost:888"+str(index), None)
-        run_xnode(node, None, url)
+        run_xnode(node, None, url, txs)
     else:
         color = SYSCONFIGX.nodes[index].color
-        run_xnode(SYSCONFIGX.nodes[index], SYSCONFIGX.directory, None)
+        run_xnode(SYSCONFIGX.nodes[index], SYSCONFIGX.directory, None, txs)
 
 
 if __name__ == "__main__":
