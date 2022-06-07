@@ -17,7 +17,7 @@ sleep 3
 
 python3 atm.py
 
-kill -KILL node0_pid
-kill -KILL node1_pid
-kill -KILL node2_pid
+kill -KILL $node0_pid
+kill -KILL $node1_pid
+kill -KILL $node2_pid
 
