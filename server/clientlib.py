@@ -105,32 +105,10 @@ class Client:
                         timeout = contract.functions.getTimeout().call()
                         ret = await self.getResult(timeout, address, retval.threshold)
                         return ret
-                        # self.outstanding_txs.add_request(address, retval.threshold)
-                        # contract = self.w3.eth.contract(address=address, abi=self.abi)
-                        # timeout = contract.functions.getTimeout().call()
-                        # outcome = await self.waitForResponse(address, timeout)
-                        # data = self.outstanding_txs.data(address)
-                        # if outcome is None:  # timeout
-                        #     result = self.checkTxStatus(address)
-                        #     print("RESULT: ", result)
-                        #     outcome = result["state"]
-                        #     data = result["data"]
-                        # return self.transform_data(data) if outcome == "COMMIT" else outcome
 
-    
-            # print("THRESHOLD IS " + str(retval.threshold) + " FOR " + address)
             if blk:
                 ret = await self.getResult(retval.timeout, address, retval.threshold)
                 return ret
-                # self.outstanding_txs.add_request(address, retval.threshold)
-                # outcome = await self.waitForResponse(address, retval.timeout)
-                # data = self.outstanding_txs.data(address)
-                # if outcome is None: # timeout
-                #     result = self.checkTxStatus(address)
-                #     print("RESULT: ", result)
-                #     outcome = result["state"]
-                #     data = result["data"]
-                # return self.transform_data(data) if outcome == "COMMIT" else outcome
 
 
 class ClientGRPC(_grpc.tpc_pb2_grpc.ClientServicer):
