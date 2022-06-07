@@ -84,7 +84,7 @@ class XNode:
         contract = self.working_contracts.get(address)["contract"]
         if contract is None:
             return
-        #cprint("VOTING " + str(vote) + " on contract " + address[-4:])
+        cprint("VOTING " + str(vote) + " on contract " + address[-4:])
         tx_hash = contract.functions.voter(vote, self.config.id).transact()
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
         # return contract.functions.getState().call()
