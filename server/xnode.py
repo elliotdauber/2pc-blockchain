@@ -43,15 +43,15 @@ class XNode:
         cprint("STARTING XNODE SERVER " + str(self.config.id) + " @ " + self.config.url)
         self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         _grpc.tpc_pb2_grpc.add_XNodeServicer_to_server(
-            XNodeGRPC(self), server)
-        server.add_insecure_port(self.config.url)
-        server.start()
+            XNodeGRPC(self), self.server)
+        self.server.add_insecure_port(self.config.url)
+        self.server.start()
         if len(txs) > 0:
-            self.transact_multiple(self, txs, "w")
+            self.transact_multiple(txs, "w")
         if url is not None:
             self.join_system(url)
         
-        server.wait_for_termination()
+        self.server.wait_for_termination()
 
     def log(self, text):
         with open(self.config.logfile, 'a+') as f:
@@ -290,7 +290,6 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                 pass
 
         for url, request in to_send.items():
-            cprint("\n\nSENDING\n\n")
             thread = threading.Thread(None, send_ReceiveWork, None, [url, request])
             thread.start()
 
