@@ -81,6 +81,8 @@ class Client:
         return self.transform_data(data) if outcome == "COMMIT" else outcome
 
     async def makeRequest(self, transactions, access="w", blk=True):
+        print("Client at " + self.url + " called makeRequest API with: ")
+        print(transactions)
         url = random.choice(self.node_urls)
         with grpc.insecure_channel(url) as channel:
             stub = _grpc.tpc_pb2_grpc.XNodeStub(channel)
