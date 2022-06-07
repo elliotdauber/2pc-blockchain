@@ -15,6 +15,7 @@ contract TPC {
     //enum State{ INIT, VOTING, COMMIT, ABORT, TIMEOUT }
     uint32 _num_nodes;
     uint256 public _timeout;
+    uint256 public _timeout_len;
     string _state = "INIT";
     Set _voters;
     string _data = "";
@@ -37,6 +38,7 @@ contract TPC {
 
     //TODO finish
     function request(uint32 num_nodes, uint256 timeout) public {
+        _timeout_len = timeout;
         _timeout = block.timestamp + timeout;
         _num_nodes = num_nodes;
         _state = "VOTING";
@@ -91,6 +93,6 @@ contract TPC {
     }
 
     function getTimeout() public view returns (uint256) {
-        return _timeout;
+        return _timeout_len;
     }
 }

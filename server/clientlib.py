@@ -114,6 +114,14 @@ class Client:
 
                     if blk:
                         ret = await self.getResult(retval.timeout, address, retval.threshold)
+                        print("RET: ", ret)
+                        if ret == "VOTING":
+                            print("WAS VOTING")
+                            contract = self.w3.eth.contract(address=address, abi=self.abi)
+                            timeout = contract.functions.getTimeout().call()
+                            print("TIMEOUT: ", timeout)
+                            ret = await self.getResult(timeout, address, retval.threshold)
+                            print("RET: ", ret)
                         return ret
                     return
             except:
