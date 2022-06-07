@@ -159,7 +159,6 @@ class XNode:
                     with grpc.insecure_channel(clienturl) as channel:
                         stub = _grpc.tpc_pb2_grpc.ClientStub(channel)
                         outcome_request = _grpc.tpc_pb2.WorkOutcome(address=address, outcome=status) #TODO: data? only for reads
-                        cprint("ACCESS: " + access)
                         if access == "r":
                             tx_hash = contract.functions.set_data(data).transact()
                             self.w3.eth.wait_for_transaction_receipt(tx_hash)
@@ -216,9 +215,11 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         timeout = request.timeout
         self.xnode.log(address)
         self.xnode.log(str(work))
-        cprint(request.address)
+        cprint("Node " + str(self.xnode.config.id) + " is in the cohort for tx at ..." + address[-4:])
         for tx in request.work:
-            cprint(tx)
+            cprint("pk: " + tx.pk[:4] + "...")
+            cprint("sql: " + tx.sql)
+            cprint("")
 
         contract = self.xnode.w3.eth.contract(address=address, abi=self.xnode.contract.abi)
         working_contract = {
@@ -233,14 +234,12 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
         return _grpc.tpc_pb2.WorkResponse()
 
     def SendWork(self, request, context):
-        # cprint("GOT WORK")
         work = request.work
         address = request.address
         if len(work) == 0:
             return _grpc.tpc_pb2.WorkResponse(error="no work given, operation aborted")
 
-        # address = self.xnode.contract.deploy()
-        cprint("deployed at address " + address)
+        cprint("Node " + str(self.xnode.config.id) + " acting as the coordinator for tx at ..."+ address[-4:] + "\n")
 
         # figuring out where to send the data
         to_send = {} # node.url to WorkRequest
@@ -253,10 +252,8 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                 if pk == empty_string_hash:
                     node_request.work.append(tx)  # forward no-pk requests to all servers
                     continue
-                # cprint("DIR LOOKUP: " + str(node.url) + " " + str(self.xnode.directory.search(pk)))
                 if node.url in self.xnode.directory.search(pk)[1]:
                     node_request.work.append(tx)
-                    # cprint("URL: " + str(node.url) + "\nWORK: " + str(tx))
 
 
             if len(node_request.work) > 0:
