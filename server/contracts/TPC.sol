@@ -89,4 +89,8 @@ contract TPC {
     function getData() public view returns (string memory) {
         return _data;
     }
+
+    function getTimeout() public view returns (uint256) {
+        return _timeout;
+    }
 }
