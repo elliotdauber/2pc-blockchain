@@ -82,7 +82,7 @@ class XNode:
         contract = self.working_contracts.get(address)["contract"]
         if contract is None:
             return
-        # cprint("VOTING " + str(vote) + " on contract " + address)
+        #cprint("VOTING " + str(vote) + " on contract " + address[-4:])
         tx_hash = contract.functions.voter(vote, self.config.id).transact()
         self.w3.eth.wait_for_transaction_receipt(tx_hash)
         # return contract.functions.getState().call()
@@ -198,7 +198,6 @@ class XNode:
                 self.config = NodeConfig(info.id, info.url, info.color)
                 new_dir = {int(key): value.url for key, value in retval.directory.items()}
                 self.directory = Directory(pre_dir=new_dir)
-                cprint(str(self.directory.dir))
                 return True
             else:
                 print("FAILED TO JOIN")
@@ -365,29 +364,11 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
                 retval = stub.MoveData(request)
                 if not retval.complete:
                     return failed_response
-            keys_to_delete = set()
-            to_delete = []
-            for tx in work:
-                sql = str(tx.sql)
-                name_loc = sql.find("pk=")
-                if name_loc != -1 :
-                    name = sql[name_loc + 3:]
-                    if name not in keys_to_delete:
-                        op1 = {
-                            "pk": tx.pk,
-                            "sql": "DELETE FROM customers WHERE pk=" + name 
-                        }
-                        to_delete.append(op1)
-                        keys_to_delete.add(name)
-            self.xnode.transact_multiple(to_delete, "w")
-            cprint("Old PKs Removed")
-            
 
         # add node to self.xnode.nodes: 
         cprint("Adding Node to Directory")
         self.xnode.nodes.append(new_node)
         self.xnode.directory.updateDir(new_node_keys, new_url)    
-        cprint(str(self.xnode.directory.dir))
 
         if not start_node:
             response = _grpc.tpc_pb2.JoinResponse(work=work, success=True)
@@ -396,20 +377,40 @@ class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
             for key, value in self.xnode.directory.dir.items():
                 grpc_dict[str(key)] = _grpc.tpc_pb2.url_list(url=value)
             response = _grpc.tpc_pb2.JoinResponse(config=node_message, directory=grpc_dict, work=work, success=True) # sucess when original node is complete
-        # TODO: Delete data associated with new keys
+
+        #Delete data associated with new keys
+            keys_to_delete = set()
+            to_delete = []
+            for tx in work:
+                _sql = tx.sql
+                name_start = _sql.find("(\'")
+                name_end = _sql.find("\',")
+                if name_start != -1 :
+                    name = _sql[name_start + 2: name_end]
+                    cprint("GOING TO DELETE:" + str(name))
+                    if name not in keys_to_delete:
+                        op1 = _grpc.tpc_pb2.SQLTransaction(
+                            pk=tx.pk,
+                            sql="DELETE FROM customers WHERE pk='" + name + "';"
+                        )
+                        to_delete.append(op1)
+                        keys_to_delete.add(name)
+            self.xnode.transact_multiple(to_delete, "w")
+            cprint("Old PKs Removed")
 
         return response
 
     def MoveData(self, request, context):
-        work = request.work
-        transactions = []
-        for i in range(len(work)):
-            transactions.append(work[i])
-        self.xnode.transact_multiple(transactions, "X")
-        print("Updates Completed")
-        response = _grpc.tpc_pb2.MoveResponse(complete=True)
-        #except:
-        #response = _grpc.tpc_pb2.MoveResponse(complete=False)
+        try:
+            work = request.work
+            transactions = []
+            for i in range(len(work)):
+                transactions.append(work[i])
+            self.xnode.transact_multiple(transactions, "X")
+            print("Updates Completed")
+            response = _grpc.tpc_pb2.MoveResponse(complete=True)
+        except:
+            response = _grpc.tpc_pb2.MoveResponse(complete=False)
         return response
 
 
