@@ -14,6 +14,7 @@ from recovery import recover
 import time
 import hashlib
 import os
+import signal
 
 color = ""
 
@@ -33,7 +34,6 @@ class XNode:
         self.coordinating_contracts = {}
         self.working_pk = set()
         self.timeout = 10
-        self.server = None
         cprint(self.config.url)
 
     # NODE FUNCTIONS
@@ -43,15 +43,23 @@ class XNode:
         cprint("STARTING XNODE SERVER " + str(self.config.id) + " @ " + self.config.url)
         if len(txs) > 0:
             self.transact_multiple(txs, "w")
-        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        stop_event = threading.Event()
+
+        executor = futures.ThreadPoolExecutor()
+        server = grpc.server(executor)
         _grpc.tpc_pb2_grpc.add_XNodeServicer_to_server(
-            XNodeGRPC(self), self.server)
-        self.server.add_insecure_port(self.config.url)
-        self.server.start()
+            XNodeGRPC(self, stop_event), server)
+        server.add_insecure_port(self.config.url)
+        server.start()
         if url is not None:
             self.join_system(url)
-        
-        self.server.wait_for_termination()
+
+        stop_event.wait()
+        server.stop(0)
+        executor.shutdown(wait=False)
+        cprint("STOPPED")
+        exit(0)
+        # self.server.wait_for_termination()
 
     def log(self, text):
         with open(self.config.logfile, 'a+') as f:
@@ -126,13 +134,13 @@ class XNode:
         state = contract.functions.getState().call()
         cprint("xnode " + str(self.config.id) + " found a " + state)
         if state == "COMMIT":
-            self.timeout = max(self.timeout-5, 5)
+            self.timeout = max(self.timeout-1, 3)
             self.clear_contract(working_contract, address)
             self.transact_multiple(working_contract["work"])
         elif state == "ABORT":
             self.clear_contract(working_contract, address)
         elif state in "TIMEOUT":
-            self.timeout = min(2*self.timeout, 5000)
+            self.timeout = min(2*self.timeout, 3)
             self.clear_contract(working_contract, address)
         
         cprint("xnode " + str(self.config.id) + " has a new timeout of " + str(self.timeout))
@@ -154,10 +162,10 @@ class XNode:
                 self.clear_contract(working_contract, address) 
                 data = ""
                 if status == "COMMIT":
-                    self.timeout = max(self.timeout-5, 5)
+                    self.timeout = max(self.timeout-3, 3)
                     data = self.transact_multiple(working_contract["work"], access) 
                 elif status == "TIMEOUT":
-                    self.timeout = min(2*self.timeout, 5000)
+                    self.timeout = min(2*self.timeout, 3)
 
                 if status in ["COMMIT", "ABORT"]:
                     with grpc.insecure_channel(clienturl) as channel:
@@ -211,15 +219,18 @@ class XNode:
                 return False
 
 class XNodeGRPC(_grpc.tpc_pb2_grpc.XNodeServicer):
-    def __init__(self, xnode):
+    def __init__(self, xnode, stop_event):
         super().__init__()
         self.xnode = xnode
+        self.stop_event = stop_event
 
     def Kill(self, request, context):
         cprint("\n\nNODE " + str(self.xnode.config.id) + " KILLED\n\n\n")
         os.remove("db" + str(self.xnode.config.id) + ".db")
-        self.xnode.server.stop(0)
-        exit()
+        # self.xnode.server.stop(0)
+        self.stop_event.set()
+        # exit()
+        os.kill(os.getpid(), signal.SIGTERM)
         return _grpc.tpc_pb2.Empty()
 
     def ReceiveWork(self, request, context):
