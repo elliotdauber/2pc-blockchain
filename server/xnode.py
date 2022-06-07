@@ -41,13 +41,13 @@ class XNode:
     def serve(self, url=None, txs=[]):
         # Initialize the server
         cprint("STARTING XNODE SERVER " + str(self.config.id) + " @ " + self.config.url)
+        if len(txs) > 0:
+            self.transact_multiple(txs, "w")
         self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         _grpc.tpc_pb2_grpc.add_XNodeServicer_to_server(
             XNodeGRPC(self), self.server)
         self.server.add_insecure_port(self.config.url)
         self.server.start()
-        if len(txs) > 0:
-            self.transact_multiple(txs, "w")
         if url is not None:
             self.join_system(url)
         
@@ -444,10 +444,7 @@ def run_xnode(config, directory, url, txs):
     assert(w3.isConnected())
     source = "contracts/TPC.sol"
     X = XNode(w3.w3, config, directory, source)
-    if url is not None:
-        X.serve(url, txs)
-    else:
-        X.serve()
+    X.serve(url, txs)
     return X
 
 
